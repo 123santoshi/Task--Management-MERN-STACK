@@ -1,0 +1,3 @@
+[submodule "Frontend/taskdashboard"]
+	path = Frontend/taskdashboard
+	url = https://github.com/123santoshi/Task-Management--React
