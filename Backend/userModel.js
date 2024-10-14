@@ -11,11 +11,7 @@ const collectionName = 'userCollection';
 
 // Define user schema
 const userSchema = new mongoose.Schema({
-  firstname: {
-    type: String,
-    required: true,
-  },
-  lastname: {
+  username: {
     type: String,
     required: true,
   },
@@ -26,8 +22,8 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['admin', 'user'],
-    default: 'user',
+    enum: ['Admin', 'User'],
+    default: 'User',
   },
   otp: {
     type: String,
@@ -42,7 +38,7 @@ const UserModel = mongoose.model(collectionName, userSchema);
 const userRouter = express.Router();
 
 const generateOtp = () => {
-  crypto.randomInt(100000, 999999).toString();
+  return crypto.randomInt(100000, 999999).toString();
 }
 
 
@@ -71,11 +67,71 @@ const sendMail = async (email, otp) => {
     from: process.env.SMTP_USER,
     to: email,
     subject: 'Your OTP Code',
-    text: `Your OTP code is ${otp}. This OTP is valid for 10 minutes.`,
+    html: `Your OTP code is <strong>${otp}</strong>. This OTP is valid for 10 minutes.`,
   };
 
   return transporter.sendMail(mailOptions);
 };
+
+
+const sendUserAddedMail = async (username , email) => {
+  console.log('Entered into send user added emmail function');
+  const transporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST,
+    port: process.env.SMTP_PORT,
+    secure: process.env.SMTP_SECURE === 'true',
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASSWORD,
+    },
+  });
+
+  transporter.verify((error) => {
+    if (error) {
+      console.log('Connection error:', error);
+    } else {
+      console.log('Server is ready to take our messages');
+    }
+  });
+
+  const mailOptions = {
+    from: process.env.SMTP_USER,
+    to: email,
+    subject: 'Congratulations!! Welcome to Task Timer', 
+    html: `
+      <div style="max-width: 600px; margin: 20px auto; padding: 0; border-radius: 10px; box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1); font-family: Arial, sans-serif; background-color: #f5f5f5;">
+    <div style="background-color: lightblue; padding: 25px; border-radius: 10px 10px 0 0; text-align: center;">
+        <h2 style="margin: 0; color: black;">Welcome to Task Timer!</h2>
+    </div>
+    <div style="padding: 20px; background-color: white; border-radius: 0 0 10px 10px;">
+        <h3 style="color: #333; margin-top: 0;">Hi <strong>${username}</strong>,</h3>
+        <p style="font-size: 15px; color: #555; line-height: 1.5;">
+            We’ve successfully onboarded you, and you are now set up to begin your tasks. We look forward to working together and are excited for the contributions you’ll bring to the team.
+        </p>  
+    <div style="width: 50%; padding: 10px; margin: 20px auto; background-color: lightblue; color: black; border-radius: 5px; font-weight: bold;">
+            <a  href="http://localhost:3000/login" style="display: block;  font-size: 16px;  border-radius: 5px; font-weight: bold; text-align: center; text-decoration: none; transition: background-color 0.3s ease, color 0.3s ease;">Click here to join us </a>
+        </div>
+
+     <div style="width: 50%; padding: 10px; margin: 20px auto; background-color: lightgray; color: black; border-radius: 5px; font-weight: bold;">
+            <p style="text-align: center; margin: 0;"><strong>Username : </strong> <span>${email}</span></p>
+        </div>
+
+        <p style="font-size: 15px; color: #777; line-height: 1.5; margin-bottom: 20px;">
+            Please feel free to reach out if you have any questions or need assistance as you get started.
+        </p>
+        <h4 style="color: #333; margin-bottom: 5px;">Best regards,</h4>
+        <h4 style="color: #333; margin: 0;">Task Timer Team</h4>
+    </div>
+</div>
+
+   `
+  };
+  
+  
+
+  return transporter.sendMail(mailOptions);
+};
+
 
 // Sign-in route
 userRouter.post('/sign-in', async (req, res) => {
@@ -88,19 +144,16 @@ userRouter.post('/sign-in', async (req, res) => {
   return res.status(200).json({ message: 'Email exists' });
 });
 
+
+
 // Send OTP route
 userRouter.post('/send-otp', expressAsyncHandler(async (req, res) => {
   const { email } = req.body;
-
-  if (!email) {
+   if (!email) {
     return res.status(400).json({ message: 'Email is required' });
   }
-
   const otp = generateOtp();
   const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
-
-  console.log('Generated OTP:', otp);
-
   try {
     const user = await UserModel.findOne({ email });
     if (user) {
@@ -110,17 +163,18 @@ userRouter.post('/send-otp', expressAsyncHandler(async (req, res) => {
       await sendMail(email, otp);
       return res.status(200).json({ message: 'OTP sent successfully', otp });
     }
-    return res.status(404).json({ message: 'Email ID not registered' });
+    return res.status(404).json({ message: 'Email ID not registered.' });
   } catch (error) {
     console.error('Error sending OTP:', error);
     return res.status(500).json({ message: 'Failed to send OTP', error: error.message });
   }
 }));
 
+
+
 // Verify OTP route
 userRouter.post('/verify-otp', expressAsyncHandler(async (req, res) => {
   const { email, otp } = req.body;
-
   if (!email || !otp) {
     return res.status(400).json({ message: 'Email and OTP are required' });
   }
@@ -136,12 +190,14 @@ userRouter.post('/verify-otp', expressAsyncHandler(async (req, res) => {
     if (user.otpExpires < new Date()) {
       return res.status(400).json({ message: 'OTP has expired' });
     }
-    return res.status(200).json({ message: 'OTP verified successfully' });
+    return res.status(200).json({ message: 'OTP verified successfully' , role: user.role , username : user.username});
   } catch (error) {
     console.error('Error verifying OTP:', error);
     return res.status(500).json({ message: 'Failed to verify OTP', error: error.message });
   }
 }));
+
+
 
 // GET route to fetch a single user by ID
 userRouter.get('/:id', async (req, res) => {
@@ -157,6 +213,25 @@ userRouter.get('/:id', async (req, res) => {
   }
 });
 
+
+//send invitaton to the user
+userRouter.get("/invite/:id", async (req, res) => {
+  const { id } = req.params;
+  try {
+    const user = await UserModel.findById(id);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    console.log("username==", user.username, "email==", user.email);
+    await sendUserAddedMail(user.username, user.email);
+    res.status(200).json({ message: "Invite sent successfully" });
+  } catch (err) {
+    console.error("Error sending invite:", err.message);
+    res.status(500).json({ error: "Invite not sent", details: err.message });
+  }
+});
+
+
 // GET route to fetch all users
 userRouter.get('/', async (req, res) => {
   try {
@@ -167,22 +242,28 @@ userRouter.get('/', async (req, res) => {
   }
 });
 
+
+
 // POST route to create a new user
 userRouter.post('/signup', async (req, res) => {
-  const { firstname, lastname, email, role, otp } = req.body;
+  const { username, email, role } = req.body;
 
   try {
     const existedEmail = await UserModel.findOne({ email });
     if (existedEmail) {
       return res.status(409).json({ message: 'Email already exists in the database' });
     }
-    const newUser = new UserModel({ firstname, lastname, email, role, otp });
+    const newUser = new UserModel({ username, email, role });
     await newUser.save();
+    const res_send_user_email = await sendUserAddedMail(username,email);
+    console.log("res form send user mail==",res_send_user_email)
     return res.status(201).json(newUser);
   } catch (err) {
     return res.status(500).json({ message: 'Error while inserting the new user record', error: err });
   }
 });
+
+
 
 // DELETE route to delete a user by ID
 userRouter.delete('/:id', async (req, res) => {
@@ -197,6 +278,8 @@ userRouter.delete('/:id', async (req, res) => {
     return res.status(500).json({ message: 'Error while deleting the user', error: err });
   }
 });
+
+
 
 // PUT route to update a user by ID
 userRouter.put('/:id', async (req, res) => {
@@ -213,4 +296,6 @@ userRouter.put('/:id', async (req, res) => {
   }
 });
 
-export default userRouter;
+
+
+export { userRouter, UserModel };
