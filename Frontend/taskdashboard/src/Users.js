@@ -44,6 +44,29 @@ const Users = () => {
     setSearchUser(e.target.value);
   };
 
+
+  const downloadCSV = () => {
+    const headers = ["Username" ,"Email", "Role"];
+    const rows = filteredUsers.map(user => [
+        user.username,
+        user.email,
+        user.role
+    ]);
+    let csvContent = "data:text/csv;charset=utf-8,"
+      + headers.join(",") + "\n"
+      + rows.map(e => e.join(",")).join("\n");
+    const link = document.createElement("a");
+    link.setAttribute("href", encodeURI(csvContent));
+    link.setAttribute("download", "Users_List.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+};
+  
+  
+
+
   useEffect(() => {
     getUsers();
   }, []);
@@ -56,6 +79,7 @@ const Users = () => {
     );
   });
   
+
 
   return (
     <div className='w-full bg-gray-100 p-4'>
@@ -77,6 +101,10 @@ const Users = () => {
             onChange={searchHandler}
             className='border border-gray-500 px-10 py-3 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-300 w-full sm:w-auto'
           />
+
+         <button className= "mx-5 text-2xl" onClick={downloadCSV}>
+              <i className="fas fa-download"></i>
+          </button>   
         </div>
       </div>
 
@@ -99,15 +127,15 @@ const Users = () => {
                   <td className="p-4 text-center">{item.role}</td>
                   <td className="p-4 text-center">
                     <Link to={`/edituser/${item._id}`}>
-                      <button className="bg-blue-500 text-white px-4 py-2 w-[100px] rounded-md mr-2 hover:bg-blue-600 transition">
-                        Edit
+                      <button className="bg-blue-500 text-white px-4 py-2 w-[50px] rounded-md mr-2 hover:bg-blue-600 transition">
+                        <i className="fas fa-edit"></i>
                       </button>
                     </Link>
-                    <button className="bg-red-500 text-white w-[100px] px-4 py-2 rounded-md hover:bg-red-600 transition" onClick={() => deleteUser(item._id)}>
-                      Delete
+                    <button className="bg-red-500 text-white w-[50px] px-4 py-2 rounded-md hover:bg-red-600 transition" onClick={() => deleteUser(item._id)}>
+                      <i className="fas fa-trash"></i>
                     </button>
-                    <button className=" text-white mx-5 px-4 py-2 rounded-md hover: bg-green-600 transition" onClick={()=>sendInvite(item._id)}>
-                      Send Invite
+                    <button className=" text-white mx-2  px-4 py-2 rounded-md hover: bg-green-500 transition" onClick={()=>sendInvite(item._id)}>
+                    <i className="fas fa-paper-plane"></i>
                     </button>
                   </td>
                 </tr>

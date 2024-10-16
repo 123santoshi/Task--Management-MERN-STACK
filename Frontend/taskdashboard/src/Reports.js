@@ -16,25 +16,25 @@ const Reports = () => {
       <div className="w-1/5 bg-gray-100 p-6">
         <ul className="space-y-6">
           <Link to="timelogreport">
-            <li className={`w-full mb-5 text-2xl border border-2 p-10 rounded-md hover:underline ${getActiveStyle('timelogreport')}`}>
+            <li className={`w-full mb-5 text-lg border border-2 p-10 rounded-md hover:underline ${getActiveStyle('timelogreport')}`}>
               LogTime Report
             </li>
           </Link>
 
           <Link to="taskcountstatus">
-            <li className={`w-full mb-5 text-2xl border border-2 p-10 rounded-md hover:underline ${getActiveStyle('taskcountstatus')}`}>
+            <li className={`w-full mb-5 text-lg border border-2 p-10 rounded-md hover:underline ${getActiveStyle('taskcountstatus')}`}>
               Tasks Count Based On The Task Status
             </li>
           </Link>
 
           <Link to="taskcountusers">
-            <li className={`w-full mb-5 text-2xl border border-2 p-10 rounded-md hover:underline ${getActiveStyle('taskcountusers')}`}>
+            <li className={`w-full mb-5 text-lg border border-2 p-10 rounded-md hover:underline ${getActiveStyle('taskcountusers')}`}>
               Tasks Count Based On The Users
             </li>
           </Link>
 
           <Link to="totaltasktime">
-            <li className={`w-full mb-5 text-2xl border border-2 p-10 rounded-md hover:underline ${getActiveStyle('totaltasktime')}`}>
+            <li className={`w-full mb-5 text-lg border border-2 p-10 rounded-md hover:underline ${getActiveStyle('totaltasktime')}`}>
               Task Time Report
             </li>
           </Link>

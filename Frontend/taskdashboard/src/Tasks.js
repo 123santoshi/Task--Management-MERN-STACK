@@ -15,7 +15,10 @@ const Tasks = () => {
 
     const getTasks = async () => {
         const data = (await axios.get("http://localhost:8000/tasks")).data;
-        setTasks(data);
+        const new_data= data.filter((item)=> item.taskstatus!='Completed');
+        setTasks(new_data);
+        console.log("tasks==",data)
+
     };
 
     const getTaskStatus = async () => {
@@ -42,7 +45,7 @@ const Tasks = () => {
 
     const filteredTasks = tasks.filter((item) =>
         item.taskname.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.taskstatus.toLowerCase().includes(searchTerm.toLowerCase())
+        item.taskstatus.toLowerCase().includes(searchTerm.toLowerCase()) 
     );
 
     const handleStatusChange = async (id, newStatus) => {
@@ -104,6 +107,29 @@ const Tasks = () => {
         }
     };
 
+
+    const downloadCSV = () => {
+        const headers = ["Task Name", "Owner", "Start Date" , "End Date", "Recurring Task" , 'Task Status'];
+        const rows = filteredTasks.map(task => [
+            task.taskname,
+            task.owner.username,
+            task.startdate,
+            task.enddate,
+            task.isrecurring,
+            task.taskstatus
+        ]);
+        let csvContent = "data:text/csv;charset=utf-8,"
+          + headers.join(",") + "\n"
+          + rows.map(e => e.join(",")).join("\n");
+        const link = document.createElement("a");
+        link.setAttribute("href", encodeURI(csvContent));
+        link.setAttribute("download", "Tasks_report.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+    };
+
     useEffect(() => {
         getTasks();
         getTaskStatus();
@@ -130,7 +156,12 @@ const Tasks = () => {
                         onChange={searchHandler}
                         className='border border-gray-500 px-10 py-3 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-300 w-full sm:w-auto'
                     />
+
+                    <button className= "mx-5 text-2xl" onClick={downloadCSV}>
+                            <i className="fas fa-download"></i>
+                    </button>   
                 </div>
+               
             </div>
 
             <div className="overflow-x-auto mt-5">
@@ -141,6 +172,7 @@ const Tasks = () => {
                             <th className="p-4">Owner</th>
                             <th className="p-4">Start Date</th>
                             <th className="p-4">End Date</th>
+                            <th className="p-4">Recurring Task</th>
                             <th className="p-4">Task Status</th>
                             <th className="p-4">Actions</th>
                         </tr>
@@ -152,6 +184,8 @@ const Tasks = () => {
                                 <td className="p-4 text-center">{item.owner ? (typeof item.owner === 'object' ? item.owner.username : item.owner) : 'No Owner'}</td>
                                 <td className="p-4 text-center">{new Date(item.startdate).toLocaleDateString()}</td>
                                 <td className="p-4 text-center">{new Date(item.enddate).toLocaleDateString()}</td>
+                                <td className="p-4 text-center">{item.isrecurring ? 'True': 'False'}</td>
+
                                 <td className="p-4 text-center">
                                     <select
                                         value={item.taskstatus}
@@ -167,16 +201,16 @@ const Tasks = () => {
                                 </td>
                                 <td className='p-4 text-center'>
                                     <Link to={`/edittask/${item._id}`}>
-                                        <button className="bg-blue-500 text-white px-4 py-2 w-[100px] rounded-md mr-2 hover:bg-blue-600 transition">
-                                            Edit
+                                        <button className="bg-blue-500 text-white px-4 py-2 w-[50px] rounded-md mr-2 hover:bg-blue-600 transition">
+                                            <i className="fas fa-edit"></i>
                                         </button>
                                     </Link>
-                                    <button className="bg-red-500 text-white w-[100px] px-4 py-2 rounded-md hover:bg-red-600 transition" onClick={() => deleteTask(item._id)}>
-                                        Delete
+                                    <button className="bg-red-500 text-white w-[50px] px-4 py-2 rounded-md hover:bg-red-600 transition" onClick={() => deleteTask(item._id)}>
+                                        <i className="fas fa-trash"></i>
                                     </button>
                                     <Link to={`/manualtimelog/${item._id}`}>
-                                        <button className="bg-green-500 text-white px-4 py-2 mx-2 w-[100px] rounded-md mr-2 hover:bg-green-600 transition">
-                                            LogTime
+                                        <button className="bg-green-500 text-white px-4 py-2 mx-2 w-[50px] rounded-md mr-2 hover:bg-green-600 transition">
+                                            <i className="fas fa-clock"></i>
                                         </button>
                                     </Link>
                                     <button className="text-black px-4 py-2 mx-2 rounded-md transition" onClick={() => taskAction(item._id)}>

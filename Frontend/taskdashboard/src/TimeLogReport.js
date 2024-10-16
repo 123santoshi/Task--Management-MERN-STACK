@@ -65,6 +65,30 @@ const filteredTasks = tasks.filter((item) => {
 });
 
 
+  const downloadCSV = () => {
+      const headers = ["Task Name", "Owner", "Task Status", "Log Time", "Description", "Logged Time Date"];
+        const rows = filteredTasks.flatMap(task =>
+        task.spent_time.map(item => [
+          task.taskname,
+          task.owner.username,
+          task.taskstatus,
+          item.time,
+          item.description,
+          item.logdate
+        ])
+      );
+      let csvContent = "data:text/csv;charset=utf-8," 
+        + headers.join(",") + "\n"
+        + rows.map(e => e.join(",")).join("\n");
+      const link = document.createElement("a");
+      link.setAttribute("href", encodeURI(csvContent));
+      link.setAttribute("download", "TimeLog_report.csv");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+  };
+
+
   useEffect(() => {
     getTasks();
     getUsers();
@@ -113,6 +137,10 @@ const filteredTasks = tasks.filter((item) => {
           placeholderText="End Date"
           className="border border-gray-300 rounded-lg m-5 p-5 shadow-md focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition"
         />
+
+        <button className= "mx-5 text-2xl" onClick={downloadCSV}>
+              <i className="fas fa-download"></i>
+          </button>
       </div>
 
       <div className="overflow-x-auto mt-5">

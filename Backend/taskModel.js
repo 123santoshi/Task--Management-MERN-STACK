@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import nodemailer from 'nodemailer';
 import schedule from 'node-schedule';
+import cron from 'node-cron';
 import {UserModel} from "./userModel.js"
 import expressAsyncHandler from 'express-async-handler';
 import axios from 'axios';
@@ -31,6 +32,16 @@ const taskSchema = new mongoose.Schema({
     type: String,
     default: 'New',
   },
+  isrecurring:{
+    type:Boolean,
+    default:false
+  },
+  recuringfrequency: {
+     type: String
+  },
+  recuringenddate:{
+    type:Date
+  },
   spent_time: [{
     time: { type: String },
     description: { type: String ,default:"Automatic Time Logged" },
@@ -40,6 +51,7 @@ const taskSchema = new mongoose.Schema({
 
 const taskModel = mongoose.model(collectionName, taskSchema);
 const taskRouter = express.Router();
+
 
 const sendTaskAddedMail = async (username, email, taskname) => {
   console.log('Sending task assignment email...');
@@ -115,7 +127,7 @@ const sendTaskDueMail = async (username, email, taskname) => {
       console.log('Server is ready to take our messages');
     }
   });
-
+ console.log("username==",username,"tasknmae==",taskname,"emaill===",email);
   const mailOptions = {
     from: process.env.SMTP_USER,
     to: email,
@@ -128,7 +140,7 @@ const sendTaskDueMail = async (username, email, taskname) => {
         <div style="padding: 20px; background-color: #f9f9f9;">
             <h3 style="color: #333;">Hello ${username},</h3>
             <p style="font-size: 15px; color: #555; line-height: 1.5;">
-                This is a friendly reminder that the task <strong>${taskname}</strong> is due soon.
+                This is a friendly reminder that the task <strong>${taskname}</strong> is due Today.
             </p>
             <p style="font-size: 14px; color: #777; line-height: 1.4;">
                 Please log in to your account to check the task details and complete it before the deadline.
@@ -145,15 +157,107 @@ const sendTaskDueMail = async (username, email, taskname) => {
 };
 
 
-schedule.scheduleJob('0 9 * * *', async () => {
+
+const setRecurringTasks = async () => {
+  try {
+    const data = await taskModel.find({});
+    const recurrenceDays = {
+      daily: 1,
+      weekly: 7,
+      monthly: 30,
+    };
+    console.log("tasks data==", data);
+    for (let item of data) {  
+      if (item.isrecurring) { 
+        const recur_freq_days = recurrenceDays[item.recuringfrequency];
+        console.log("recurrence frequency days==", recur_freq_days);
+        
+        let currentTaskDate = new Date(item.startdate); 
+        const recurring_end_date = new Date(item.recuringenddate); 
+        if (currentTaskDate <= recurring_end_date) {
+
+          await taskModel.updateOne(
+            { _id: item._id }, // Find the current task by ID
+            { taskstatus: "Completed" } // Update its status to completed
+          );
+
+          const newTask = new taskModel({
+            taskname: item.taskname,
+            owner: item.owner,
+            taskstatus: item.taskstatus,
+            isrecurring: item.isrecurring,
+            recurringfrequency: item.recuringfrequency,
+            recurringenddate: item.recuringenddate,
+            startdate:currentTaskDate, 
+            enddate: item.enddate,
+          });
+          currentTaskDate.setDate(currentTaskDate.getDate() + recur_freq_days);
+          await newTask.save();
+          console.log("New recurring task saved:", newTask);
+        }
+      }
+    }
+  } catch (error) {
+    console.error("Error setting recurring tasks:", error);
+  }
+};
+
+
+cron.schedule('30 9 * * *', () => {
+  console.log('Running a task on the everyday at 9 AM');
+  setRecurringTasks();
+  helloWorld();
+});
+
+
+const helloWorld = ()=>{
+  const transporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST,
+    port: process.env.SMTP_PORT,
+    secure: process.env.SMTP_SECURE === 'true',
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASSWORD,
+    },
+  });
+
+  transporter.verify((error) => {
+    if (error) {
+      console.log('Connection error:', error);
+    } else {
+      console.log('Server is ready to take our messages');
+    }
+  });
+  const mailOptions = {
+    from: process.env.SMTP_USER,
+    to: "santhoshi@snovasys.com",
+    subject: 'New Task has been assigned to you',
+    html: `
+      <div style="max-width: 600px; margin: auto; border: 1px solid #e0e0e0; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); background-color: #f9f9f9;">
+        <div style="background-color: #4CAF50; color: white; padding: 15px; text-align: center;">
+            <h4 style="margin: 0;">Recurring Tasks Job Runned</h4>
+        </div>
+        <div>
+          <h1>Recurring jobs running </h1>
+        </div>
+      </div>
+    `,
+  };
+  return transporter.sendMail(mailOptions);
+}
+
+
+ 
+cron.schedule('30 9 * * *', async () => {
   try {
     const cur_date = new Date();
     console.log("Current date:", cur_date);
-    const tasks = await taskModel.find();
+    const tasks = await taskModel.find({}).populate('owner', 'username email');   
+    console.log("all tasks=",tasks);
     if (tasks && tasks.length > 0) {
       for (const item of tasks) {
         const end_date = new Date(item.enddate); 
-        if (end_date < cur_date) { 
+        if (end_date <= cur_date) { 
           await sendTaskDueMail(item.owner.username, item.owner.email, item.taskname);
           console.log(`Email sent for task: ${item.taskname} to ${item.owner.username}`);
         }
@@ -189,40 +293,53 @@ taskRouter.post("/logtime/:id", async (req, res) => {
 
 
 // POST method to add a new task
-taskRouter.post('/',
+
+taskRouter.post(
+  '/',
   expressAsyncHandler(async (req, res) => {
     const { owner, enddate, taskname, ...rest } = req.body;
-    
     try {
+      // Validate owner as ObjectId
       if (!mongoose.Types.ObjectId.isValid(owner)) {
         return res.status(400).json({ error: 'Invalid owner ID format' });
       }
-      
+
+      // Parse enddate if it exists
       const parsedEndDate = enddate ? new Date(enddate) : undefined;
       if (parsedEndDate && isNaN(parsedEndDate.getTime())) {
         return res.status(400).json({ error: 'Invalid end date format' });
       }
 
-      const ownerId = new mongoose.Types.ObjectId(owner);
+      // Create the new task with the valid data
+      const ownerId = new mongoose.Types.ObjectId(owner); // Ensure owner is an ObjectId
       const newTask = new taskModel({
         owner: ownerId,
-        taskname: taskname,
+        taskname,
         enddate: parsedEndDate,
-        ...rest,
+        ...rest, // Spread other fields like taskstatus, isrecurring, etc.
       });
-      
+
+      // Save the new task
       await newTask.save();
-      const populatedTask = await taskModel.findById(newTask._id).populate('owner', 'username email');
-      
+
+      // Populate the owner field with the necessary details
+      const populatedTask = await taskModel
+        .findById(newTask._id)
+        .populate('owner', 'username email'); // Populate the owner's username and email
+
       if (!populatedTask) {
         return res.status(500).json({ error: 'Error fetching task owner details' });
       }
 
+      // Extract owner details and send an email
       const { username, email } = populatedTask.owner;
       await sendTaskAddedMail(username, email, taskname);
+
+      // Return the newly created task with populated owner details
       return res.status(201).json(populatedTask);
-      
+
     } catch (err) {
+      console.error('Error creating task:', err.message); // Log the error to the console
       return res.status(500).json({
         error: 'Error while inserting the new task',
         details: err.message,
@@ -230,6 +347,7 @@ taskRouter.post('/',
     }
   })
 );
+
 
 
 
@@ -254,6 +372,7 @@ taskRouter.get('/:id', async (req, res) => {
   }
   try {
     const data = await taskModel.findById(id).populate('owner','username'); 
+    console.log("data==",data);
     if (data) {
       res.status(200).json(data);
     } else {
@@ -284,28 +403,37 @@ taskRouter.get('/', async (req, res) => {
 
 
 
-
-
-// Update a task
 // Update a task
 taskRouter.put('/:id', async (req, res) => {
   const { id } = req.params;
-  const new_data = req.body;
+  console.log("re body==",req.body);
+  const new_data = {
+    ...req.body,
+    
+  };
+
+  console.log("New data to update:", new_data);
   try {
     const updatedTask = await taskModel.findByIdAndUpdate(id, new_data, { new: true })
-      .populate('owner', 'username'); 
+      .populate('owner', 'username');
+
     if (updatedTask) {
+      console.log("Updated task:", updatedTask);
       res.status(200).json(updatedTask);
     } else {
       res.status(404).json({ error: 'Task ID not found to update the task' });
     }
   } catch (err) {
+    console.error("Error while updating the task:", err.message);
     res.status(500).json({
       error: 'Error while updating the task',
       details: err.message,
     });
   }
 });
+
+
+
 
 
 // Delete a task
