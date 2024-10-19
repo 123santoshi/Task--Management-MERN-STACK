@@ -22,9 +22,11 @@ const TaskCountBasedOnStatus = () => {
 
   const getTaskStatus = async () => {
     try {
-      const response = await axios.get("http://localhost:8000/tasks/taskstatus");
-      setTaskStatuses(response.data.taskstatus);
-    } catch (error) {
+     
+        const data = (await axios.get("http://localhost:8000/tasks/taskstatus")).data;
+        setTaskStatuses(data.TaskStatus);
+    }
+    catch (error) {
       console.error("Error fetching task statuses:", error);
     }
   };
@@ -68,19 +70,20 @@ const TaskCountBasedOnStatus = () => {
     <div className="flex items-center justify-center h-screen border-2 bg-gray-100 flex-col">
     
       <select
-        value={searchUser}
-        onChange={(e) => setSearchUser(e.target.value)}
-        className="border border-gray-300 rounded-lg m-5 p-5 w-[200px] shadow-md focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition"
-      >
-        <option value="">Select User</option>
-        {users.map((user, index) => (
-          <option key={index} value={user.username}>
-            {user.username}
-          </option>
-        ))}
+          value={searchUser}
+          onChange={(e) => setSearchUser(e.target.value)}
+          className="border border-gray-300 rounded-lg m-5 p-5 w-[200px] shadow-md focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition ml-auto"
+        >
+          <option value="">Select User</option>
+          {users.map((user, index) => (
+            <option key={index} value={user.username}>
+              {user.username}
+            </option>
+          ))}
       </select>
+      <br/><br/><br/>
       <h1 className="text-2xl font-bold m-4 text-violet-600">Task Count Based On Status</h1>
-        <ResponsiveContainer width="100%" height={450}>
+        <ResponsiveContainer width="50%" height={450}>
           <BarChart data={data} margin={{ top: 30, right: 30, left: 30, bottom: 30 }}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis 
@@ -106,7 +109,7 @@ const TaskCountBasedOnStatus = () => {
               allowDecimals={false}
             />
             <Tooltip />
-            <Bar dataKey="taskstatuscount" fill="#8884d8" />
+            <Bar dataKey="taskstatuscount" fill="#8884d8"  />
           </BarChart>
         </ResponsiveContainer>
       </div>

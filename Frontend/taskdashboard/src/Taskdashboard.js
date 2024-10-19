@@ -13,7 +13,7 @@ const initialCount = {
   DevCompleted: 0,
   Testing: 0,
   Completed: 0,
-  Duetasks:0
+  Duetasks: 0,
 };
 
 const Taskdashboard = () => {
@@ -26,13 +26,17 @@ const Taskdashboard = () => {
   const [enddate, setEndDate] = useState(null);
   const [users, setUsers] = useState([]);
   const [searchUser, setSearchUser] = useState(''); 
+  const [searchPriority, setSearchPriority] = useState(''); // New state for priority filter
+  const [loading, setLoading] = useState(true); // Loading state
+  const priority = ['Critical', 'High', 'Low', 'Medium'];
 
   const getUsers = async () => {
     try {
       const res = await axios.get('http://localhost:8000/users');
-      console.log("users==",res.data)
+      console.log("users==", res.data);
       setUsers(res.data);
     } catch (error) {
+      setError('Error fetching users.');
       console.error('Error fetching users:', error);
     }
   };
@@ -46,14 +50,14 @@ const Taskdashboard = () => {
     } catch (error) {
       setError('Error fetching tasks. Please try again later.');
       console.error('Error fetching tasks:', error);
+    } finally {
+      setLoading(false); // Set loading to false after fetching tasks
     }
   };
 
   const calculateTasksCount = (tasks) => {
     const counts = { ...initialCount };
-    const curdate= new Date();
-
-  
+    const curdate = new Date();
 
     tasks.forEach((item) => {
       counts.totaltasks += 1;
@@ -83,7 +87,6 @@ const Taskdashboard = () => {
         default:
           break;
       }
-      console.log("count==",counts)
     });
 
     setTaskCounts(counts);
@@ -99,10 +102,12 @@ const Taskdashboard = () => {
     setSearchTask(e.target.value);
   };
 
-  // Filter tasks by name, tab, date range, and user
+  // Filter tasks by name, tab, date range, user, and priority
   const filteredTasks = tasks.filter((item) => {
     const taskNameMatch = item.taskname.toLowerCase().includes(searchTask.toLowerCase());
     const userMatch = searchUser === '' || item.owner.username === searchUser;
+    const priorityMatch = searchPriority === '' || item.taskpriority === searchPriority;
+    
     let tabMatch;
     if (selectedTab === 'Duetasks') {
       const taskEndDate = item.enddate ? new Date(item.enddate) : null;
@@ -110,12 +115,13 @@ const Taskdashboard = () => {
     } else {
       tabMatch = selectedTab === 'totaltasks' || item.taskstatus === selectedTab;
     }
+
     const taskStartDate = item.startdate ? new Date(addOneDay(item.startdate)) : null;
     const taskEndDate = item.enddate ? new Date(addOneDay(item.enddate)) : null;
     const startDateMatch = startdate ? (taskStartDate && taskStartDate >= startdate) : true;
     const endDateMatch = enddate ? (taskEndDate && taskEndDate <= enddate) : true;
 
-    return taskNameMatch && tabMatch && userMatch && startDateMatch && endDateMatch;
+    return taskNameMatch && tabMatch && userMatch && startDateMatch && endDateMatch && priorityMatch;
   });
 
   useEffect(() => {
@@ -126,59 +132,68 @@ const Taskdashboard = () => {
   return (
     <div className="p-4">
       {error && <div className="text-red-500">{error}</div>}
+      {loading && <div className="text-gray-500">Loading...</div>}
       <div className="flex flex-row w-full">
+        {/* Task Count Cards */}
         <Link to="#" className="w-full" onClick={() => setSelectedTab('totaltasks')}>
           <div className="bg-gray-100 border border-gray-300 rounded-lg p-4 m-2 text-center shadow-md hover:bg-gray-200 transition">
-            <h3 className="text-2xl font-bold text-blue-500 ">Total Tasks</h3>
+            <h3 className={`text-2xl font-bold text-green-500`}>Total Tasks</h3>
             <p className="text-gray-600 text-2xl pt-5">{taskCounts.totaltasks}</p>
           </div>
         </Link>
+
         <Link to="#" className="w-full" onClick={() => setSelectedTab('New')}>
           <div className="bg-gray-100 border border-gray-300 rounded-lg p-4 m-2 text-center shadow-md hover:bg-gray-200 transition">
-            <h3 className="text-black-300 text-2xl font-bold">New</h3>
+            <h3 className={`text-2xl font-bold text-blue-500`}>New</h3>
             <p className="text-gray-600 text-2xl pt-5">{taskCounts.New}</p>
           </div>
         </Link>
+
         <Link to="#" className="w-full" onClick={() => setSelectedTab('NotStarted')}>
           <div className="bg-gray-100 border border-gray-300 rounded-lg p-4 m-2 text-center shadow-md hover:bg-gray-200 transition">
-            <h3 className="text-red-600 text-2xl font-bold">Not Started</h3>
-            <p className="text-gray-600 text-2xl pt-5" >{taskCounts.NotStarted}</p>
+            <h3 className={`text-2xl font-bold text-red-200`}>Not Started</h3>
+            <p className="text-gray-600 text-2xl pt-5">{taskCounts.NotStarted}</p>
           </div>
         </Link>
+
         <Link to="#" className="w-full" onClick={() => setSelectedTab('InProgress')}>
           <div className="bg-gray-100 border border-gray-300 rounded-lg p-4 m-2 text-center shadow-md hover:bg-gray-200 transition">
-            <h3 className="text-orange-400 text-2xl font-bold">In Progress</h3>
+            <h3 className={`text-2xl font-bold text-yellow-300`}>In Progress</h3>
             <p className="text-gray-600 text-2xl pt-5">{taskCounts.InProgress}</p>
           </div>
         </Link>
+
         <Link to="#" className="w-full" onClick={() => setSelectedTab('DevCompleted')}>
           <div className="bg-gray-100 border border-gray-300 rounded-lg p-4 m-2 text-center shadow-md hover:bg-gray-200 transition">
-            <h3 className="text-green-400 text-2xl font-bold">Dev Completed</h3>
+            <h3 className={`text-2xl font-bold text-green-300`}>Dev Completed</h3>
             <p className="text-gray-600 text-2xl pt-5">{taskCounts.DevCompleted}</p>
           </div>
         </Link>
+
         <Link to="#" className="w-full" onClick={() => setSelectedTab('Testing')}>
           <div className="bg-gray-100 border border-gray-300 rounded-lg p-4 m-2 text-center shadow-md hover:bg-gray-200 transition">
-            <h3 className="text-pink-400 text-2xl font-bold">Testing</h3>
+            <h3 className={`text-2xl font-bold text-blue-500`}>Testing</h3>
             <p className="text-gray-600 text-2xl pt-5">{taskCounts.Testing}</p>
           </div>
         </Link>
+
         <Link to="#" className="w-full" onClick={() => setSelectedTab('Completed')}>
           <div className="bg-gray-100 border border-gray-300 rounded-lg p-4 m-2 text-center shadow-md hover:bg-gray-200 transition">
-            <h3 className="text-2xl text-green-600 font-bold">Completed</h3>
+            <h3 className={`text-2xl font-bold text-green-500`}>Completed</h3>
             <p className="text-gray-600 text-2xl pt-5">{taskCounts.Completed}</p>
           </div>
         </Link>
+
         <Link to="#" className="w-full" onClick={() => setSelectedTab('Duetasks')}>
           <div className="bg-gray-100 border border-gray-300 rounded-lg p-4 m-2 text-center shadow-md hover:bg-gray-200 transition">
-            <h3 className="text-2xl text-red-600 font-bold">Due Tasks</h3>
+            <h3 className={`text-2xl font-bold text-red-600`}>Due Tasks</h3>
             <p className="text-gray-600 text-2xl pt-5">{taskCounts.Duetasks}</p>
           </div>
         </Link>
       </div>
 
       <div className="flex justify-end mb-4">
-          <select
+        <select
           value={searchUser}
           onChange={(e) => setSearchUser(e.target.value)}  
           className="border border-gray-300 rounded-lg m-5 p-5 w-[200px] shadow-md focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition"
@@ -190,7 +205,19 @@ const Taskdashboard = () => {
             </option>
           ))}
         </select>
-
+        
+        <select
+          value={searchPriority}
+          onChange={(e) => setSearchPriority(e.target.value)}  
+          className="border border-gray-300 rounded-lg m-5 p-5 w-[200px] shadow-md focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition"
+        >
+          <option value="">Select Priority</option>
+          {priority.map((pri, index) => (
+            <option key={index} value={pri}>
+              {pri}
+            </option>
+          ))}
+        </select>
 
         <input
           type="text"
@@ -225,28 +252,31 @@ const Taskdashboard = () => {
         {filteredTasks.length > 0 ? (
           <table className="min-w-full bg-white shadow-md rounded table-striped">
             <thead className="bg-pink-500">
-              <tr className="text-center text-white">
-                <th className="p-4">Task Name</th>
-                <th className="p-4">Start Date</th>
-                <th className="p-4">End Date</th>
-                <th className="p-4">Owner</th>
-                <th className="p-4">Task Status</th>
+              <tr>
+                <th className="text-left py-3 px-4">Task Name</th>
+                <th className="text-left py-3 px-4">Owner</th>
+                <th className="text-left py-3 px-4">Start Date</th>
+                <th className="text-left py-3 px-4">End Date</th>
+                <th className="text-left py-3 px-4">Status</th>
+                <th className="text-left py-3 px-4">Priority</th>
+                
               </tr>
             </thead>
             <tbody>
-              {filteredTasks.map((item) => (
-                <tr key={item._id} className="text-center">
-                  <td className="p-4">{item.taskname}</td>
-                  <td className="p-4">{item.startdate.split('T')[0]}</td>
-                  <td className="p-4">{item.enddate.split('T')[0]}</td>
-                  <td className="p-4">{item.owner.username}</td>
-                  <td className="p-4">{item.taskstatus}</td>
+              {filteredTasks.map((task) => (
+                <tr key={task._id} className="border-b hover:bg-gray-100">
+                  <td className="py-4 px-4">{task.taskname}</td>
+                  <td className="py-4 px-4">{task.owner.username}</td>
+                  <td className="py-4 px-4">{task.startdate ? new Date(task.startdate).toLocaleDateString() : 'N/A'}</td>
+                  <td className="py-4 px-4">{task.enddate ? new Date(task.enddate).toLocaleDateString() : 'N/A'}</td>
+                  <td className="py-4 px-4">{task.taskstatus}</td>
+                  <td className="py-4 px-4">{task.taskpriority}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         ) : (
-          <div className="text-center text-gray-500">No tasks found.</div>
+          <div className="text-center py-4">No tasks found.</div>
         )}
       </div>
     </div>

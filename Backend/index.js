@@ -40,12 +40,17 @@ app.put("/users",userRouter)
 
 app.use("/tasks", taskmodel)
 app.get("/tasks",taskmodel)
-app.get("/tasks/taskstatus",taskmodel)
 app.get("/tasks/:id",taskmodel)
 app.post("/tasks/logtime/:id",taskmodel);
 app.post("/tasks", taskmodel)
 app.delete("/tasks/:id",taskmodel)
 app.put("/tasks/:id",taskmodel)
+
+app.get("/tasks/taskstatus",taskmodel)
+app.post("/tasks/taskstatus",taskmodel)
+
+app.get("/tasks/priorities",taskmodel)
+app.post("/tasks/priority",taskmodel)
 
 
 

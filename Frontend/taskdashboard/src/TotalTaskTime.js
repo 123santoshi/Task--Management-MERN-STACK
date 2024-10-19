@@ -44,7 +44,7 @@ const TimeLogReport = () => {
 
   //convet time into sec 
   const convertToSec = (spent_time) => {
-    if (!spent_time || spent_time.length === 0) return 0; // Handle empty or undefined spent_time
+    if (!spent_time || spent_time.length === 0) return 0;
     
     console.log("spent_time==", spent_time);
     const get_time = spent_time.map(item => item.time);
@@ -97,7 +97,8 @@ const TimeLogReport = () => {
         const rows = filteredTasks.map(task => [
           task.taskname,
           task.owner.username,
-          task.taskstatus
+          task.taskstatus,
+          convertToSec(task.spent_time)
         ]);
       let csvContent = "data:text/csv;charset=utf-8," 
         + headers.join(",") + "\n"

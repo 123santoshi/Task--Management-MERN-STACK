@@ -2,6 +2,8 @@ import axios from 'axios';
 import React, { useEffect, useState } from 'react';
 import "./tailwind.css";
 import { Link } from 'react-router-dom';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const Users = () => {
   const [users, setUsers] = useState([]);
@@ -17,28 +19,31 @@ const Users = () => {
     }
   };
 
-  const deleteUser = async (id) => {
-    if (window.confirm("Do you want to delete the user?")) {
-      try {
-        const res = await axios.delete(`http://localhost:8000/users/${id}`);
-        alert(res.data.message);
-        getUsers();
-      } catch (error) {
-        console.error("Error deleting user:", error);
-        alert("An error occurred while deleting the user.");
-      }
-    }
-  };
 
-  const sendInvite = async (id)=>{
-    try{
-      const res = await axios.get(`http://localhost:8000/users/invite/${id}`);
-      alert(res.data.message)
+
+const deleteUser = async (id) => {
+    if (window.confirm("Do you want to delete the user?")) {
+        try {
+            const res = await axios.delete(`http://localhost:8000/users/${id}`);
+            toast.success(res.data.message);
+            getUsers();
+        } catch (error) {
+            console.error("Error deleting user:", error);
+            toast.error("An error occurred while deleting the user.");
+        }
     }
-    catch(err){
-      alert(err.details)
+};
+
+const sendInvite = async (id) => {
+    try {
+        const res = await axios.get(`http://localhost:8000/users/invite/${id}`);
+        toast.success(res.data.message);
+    } catch (err) {
+        console.error("Error sending invite:", err);
+        toast.error("An error occurred while sending the invite.");
     }
-  }
+};
+
 
   const searchHandler = (e) => {
     setSearchUser(e.target.value);
@@ -83,6 +88,7 @@ const Users = () => {
 
   return (
     <div className='w-full bg-gray-100 p-4'>
+      <ToastContainer position="top-center" autoClose={2000}/>
       <div className='w-full flex flex-col sm:flex-row justify-between items-center p-5 rounded-md shadow-md'>
         <div className='mb-4 sm:mb-0'>
           <Link to="/adduser">
@@ -112,6 +118,7 @@ const Users = () => {
         <table className='min-w-full bg-white shadow-md rounded'>
           <thead className='bg-pink-500'>
             <tr className="text-center text-white">
+            <th className="p-4">UserId</th>
               <th className="p-4">User Name</th>
               <th className="p-4">Email</th>
               <th className="p-4">Role</th>
@@ -122,6 +129,7 @@ const Users = () => {
             {filteredUsers.length > 0 ? (
               filteredUsers.map((item) => (
                 <tr key={item._id} className="border-b hover:bg-gray-100">
+                  <td className="p-4 text-center">{item._id}</td>
                   <td className="p-4 text-center">{item.username}</td>
                   <td className="p-4 text-center">{item.email}</td>
                   <td className="p-4 text-center">{item.role}</td>

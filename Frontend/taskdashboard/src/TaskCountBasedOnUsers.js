@@ -26,12 +26,31 @@ const TaskCountBasedOnUsers = () => {
     }
   };
 
+  const getBarColor = (priority) => {
+    switch (priority) {
+      case 'Critical':
+        return '#FF0000'; // Red for Critical
+      case 'High':
+        return '#FFD700'; // Yellow for High
+      case 'Medium':
+        return '#32CD32'; // Green for Medium
+      case 'Low':
+        return '#1E90FF'; // Blue for Low
+      default:
+        return '#8884d8'; // Default color
+    }
+  };
+
   const filterData = () => {
     const result = users.map((user) => {
-      const taskCount = tasks.filter((task) => task.owner.username === user.username).length;
+      const userTasks = tasks.filter((task) => task.owner.username === user.username);
+      const taskCount = userTasks.length;
+      const priority = userTasks.length > 0 ? userTasks[0].priority : 'None'; // Assuming priority comes from the first task
+      
       return {
         user: user.username,
         taskscount: taskCount,
+       
       };
     });
     setData(result);
@@ -54,7 +73,7 @@ const TaskCountBasedOnUsers = () => {
   return (
     <div className='flex items-center justify-center h-screen border-2 bg-gray-100 flex-col'>
       <h1 className="text-2xl font-bold mb-4 text-blue-600">Task Count Per User</h1>
-      <ResponsiveContainer width="100%" height={450}>
+      <ResponsiveContainer width="50%" height={450}>
         <BarChart data={data} margin={{ top: 30, right: 30, left: 30, bottom: 30 }}>
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis 
@@ -80,7 +99,8 @@ const TaskCountBasedOnUsers = () => {
             allowDecimals={false}
           />
           <Tooltip />
-          <Bar dataKey="taskscount" fill="#8884d8" />
+         
+          <Bar dataKey="taskscount" fill="#8884d8" barSize={50} />
         </BarChart>
       </ResponsiveContainer>
     </div>

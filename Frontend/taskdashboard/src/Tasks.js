@@ -3,38 +3,48 @@ import React, { useEffect, useState } from 'react';
 import "./tailwind.css";
 import { Link, useNavigate } from 'react-router-dom';
 import { FaPlay, FaStop } from 'react-icons/fa'; 
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const Tasks = () => {
     const [tasks, setTasks] = useState([]);
     const [searchTerm, setSearchTerm] = useState("");
     const [taskstatus, setTaskStatus] = useState([]);
+    const [priorities, setPriorities] = useState([]);
     const [time, setTime] = useState(0);
     const [activeTaskId, setActiveTaskId] = useState(null);
     const [intervalId, setIntervalId] = useState(null);
+    const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
     const navigate = useNavigate();
+    const username = localStorage.getItem('username');
+   
 
     const getTasks = async () => {
         const data = (await axios.get("http://localhost:8000/tasks")).data;
-        const new_data= data.filter((item)=> item.taskstatus!='Completed');
-        setTasks(new_data);
-        console.log("tasks==",data)
-
+        setTasks(data);
+        console.log("tasks==", data);
     };
 
     const getTaskStatus = async () => {
         const data = (await axios.get("http://localhost:8000/tasks/taskstatus")).data;
-        setTaskStatus(data.taskstatus);
+        setTaskStatus(data.TaskStatus);
+    };
+
+    const getPriorities = async () => {
+        const data = (await axios.get("http://localhost:8000/tasks/priorities")).data;
+        console.log("priorities==",data);
+        setPriorities(data.Priority);
     };
 
     const deleteTask = async (id) => {
         if (window.confirm("Do you want to delete the Task?")) {
             try {
                 const response = await axios.delete(`http://localhost:8000/tasks/${id}`);
-                alert(response.data.message);
+                toast.success(response.data.message);
                 getTasks();
             } catch (err) {
                 console.error("Error while deleting the task:", err);
-                alert("Error while deleting the task");
+                toast.error("Error while deleting the task");
             }
         }
     };
@@ -50,15 +60,35 @@ const Tasks = () => {
 
     const handleStatusChange = async (id, newStatus) => {
         try {
-            const response = await axios.put(`http://localhost:8000/tasks/${id}`, { taskstatus: newStatus });
+            console.log("username==", username);
+            const response = await axios.put(`http://localhost:8000/tasks/${id}`, { taskstatus: newStatus, username: username });
             const updatedTask = response.data;
+            console.log("updated task==", updatedTask);
             setTasks((prevTasks) =>
                 prevTasks.map((task) =>
                     task._id === updatedTask._id ? updatedTask : task
                 )
             );
+            console.log("after updated the task status==", tasks);
         } catch (error) {
             console.error('Error updating task status:', error);
+        }
+    };
+
+    const handlePriorityChange = async (id, newPriority) => {
+        try {
+            console.log("username==", username);
+            const response = await axios.put(`http://localhost:8000/tasks/${id}`, { taskpriority: newPriority, username: username });
+            const updatedTask = response.data;
+            console.log("updated task==", updatedTask);
+            setTasks((prevTasks) =>
+                prevTasks.map((task) =>
+                    task._id === updatedTask._id ? updatedTask : task
+                )
+            );
+            console.log("after updated the task priority==", tasks);
+        } catch (error) {
+            console.error('Error updating task priority:', error);
         }
     };
 
@@ -82,8 +112,22 @@ const Tasks = () => {
         const hrsStr = String(hrs).padStart(2, '0');
         const minsStr = String(remainingMins).padStart(2, '0');
         const secsStr = String(remainingSecs).padStart(2, '0');
-    
+
         return `${hrsStr}:${minsStr}:${secsStr}`; 
+    };
+
+    const sortTasks = (key) => {
+        let direction = 'asc';
+        if (sortConfig.key === key && sortConfig.direction === 'asc') {
+            direction = 'desc';
+        }
+        setSortConfig({ key, direction });
+        const sortedTasks = [...tasks].sort((a, b) => {
+            if (a[key] < b[key]) return direction === 'asc' ? -1 : 1;
+            if (a[key] > b[key]) return direction === 'asc' ? 1 : -1;
+            return 0;
+        });
+        setTasks(sortedTasks);
     };
     
 
@@ -97,7 +141,7 @@ const Tasks = () => {
             setTime(0); // Reset time after logging
         } else {
             // Start the new task
-            if (intervalId) clearInterval(intervalId); // Clear the previous task's interval
+            if (intervalId) clearInterval(intervalId); 
             setTime(0);
             setActiveTaskId(id);
             const newIntervalId = setInterval(() => {
@@ -107,16 +151,26 @@ const Tasks = () => {
         }
     };
 
+    const handleFilterChange = (filter) => {
+        if (filter === "active") {
+            const activeTasks = tasks.filter(task => task.taskstatus !== 'Completed');
+            setTasks(activeTasks); 
+        } else {
+            getTasks(); 
+        }
+    };
+    
 
     const downloadCSV = () => {
-        const headers = ["Task Name", "Owner", "Start Date" , "End Date", "Recurring Task" , 'Task Status'];
+        const headers = ["Task Name", "Owner", "Start Date", "End Date", "Recurring Task", 'Task Status','Task Priority'];
         const rows = filteredTasks.map(task => [
             task.taskname,
             task.owner.username,
             task.startdate,
             task.enddate,
             task.isrecurring,
-            task.taskstatus
+            task.taskstatus,
+            task.taskpriority,
         ]);
         let csvContent = "data:text/csv;charset=utf-8,"
           + headers.join(",") + "\n"
@@ -127,16 +181,17 @@ const Tasks = () => {
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-
     };
 
     useEffect(() => {
         getTasks();
         getTaskStatus();
-    }, []);
+        getPriorities()
+;    }, []);
 
     return (
         <div className='w-full bg-gray-100 p-4'>
+              <ToastContainer position="top-center" autoClose={2000}/>
             <div className='w-full flex flex-col sm:flex-row justify-between items-center p-5 rounded-md shadow-md'>
                 <div className='mb-4 sm:mb-0'>
                     <Link to="/addtask">
@@ -144,9 +199,15 @@ const Tasks = () => {
                             Add Task
                         </button>
                     </Link>
+                    <select className="border text-lg font-bold border-black text-black px-10 py-3.5 mx-2 rounded-md  transition"
+                            onChange={(e) => handleFilterChange(e.target.value)} >
+                            <option value="all" className='text-blue-500'>All Tasks</option>
+                            <option value="active" className='text-blue-500'>Active Tasks</option>
+                    </select>
                 </div>
+                
                 <div className='mb-4 sm:mb-0'>
-                    <h3 className='text-red-600 font-bold text-lg'>Total No Of Tasks: {tasks.length}</h3>
+                    <h3 className='text-red-600 font-bold text-lg'>Total No Of Tasks : {tasks.length}</h3>
                 </div>
                 <div>
                     <input
@@ -157,23 +218,35 @@ const Tasks = () => {
                         className='border border-gray-500 px-10 py-3 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-300 w-full sm:w-auto'
                     />
 
-                    <button className= "mx-5 text-2xl" onClick={downloadCSV}>
-                            <i className="fas fa-download"></i>
+                    <button className="mx-5 text-2xl" onClick={downloadCSV}>
+                        <i className="fas fa-download"></i>
                     </button>   
                 </div>
-               
             </div>
 
             <div className="overflow-x-auto mt-5">
                 <table className='min-w-full bg-white shadow-md rounded'>
-                    <thead className='bg-pink-500'>
+                <thead className='bg-pink-500'>
                         <tr className="text-center text-white">
-                            <th className="p-4">Task Name</th>
-                            <th className="p-4">Owner</th>
-                            <th className="p-4">Start Date</th>
-                            <th className="p-4">End Date</th>
+                            <th className="p-4 cursor-pointer" onClick={() => sortTasks('taskname')}>
+                                Task Name {sortConfig.key === 'taskname' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : ''}
+                            </th>
+                            <th className="p-4 cursor-pointer" onClick={() => sortTasks('owner.username')}>
+                                Owner {sortConfig.key === 'owner.username' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : ''}
+                            </th>
+                            <th className="p-4 cursor-pointer" onClick={() => sortTasks('startdate')}>
+                                Start Date {sortConfig.key === 'startdate' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : ''}
+                            </th>
+                            <th className="p-4 cursor-pointer" onClick={() => sortTasks('enddate')}>
+                                End Date {sortConfig.key === 'enddate' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : ''}
+                            </th>
                             <th className="p-4">Recurring Task</th>
-                            <th className="p-4">Task Status</th>
+                            <th className="p-4 cursor-pointer" onClick={() => sortTasks('taskpriority')}>
+                                Task Priority {sortConfig.key === 'taskpriority' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : ''}
+                            </th>
+                            <th className="p-4 cursor-pointer" onClick={() => sortTasks('taskstatus')}>
+                                Task Status {sortConfig.key === 'taskstatus' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : ''}
+                            </th>
                             <th className="p-4">Actions</th>
                         </tr>
                     </thead>
@@ -184,7 +257,32 @@ const Tasks = () => {
                                 <td className="p-4 text-center">{item.owner ? (typeof item.owner === 'object' ? item.owner.username : item.owner) : 'No Owner'}</td>
                                 <td className="p-4 text-center">{new Date(item.startdate).toLocaleDateString()}</td>
                                 <td className="p-4 text-center">{new Date(item.enddate).toLocaleDateString()}</td>
-                                <td className="p-4 text-center">{item.isrecurring ? 'True': 'False'}</td>
+                                <td className="p-4 text-center">{item.isrecurring ? 'True' : 'False'}</td>
+
+                                <td className="p-4 text-center">
+                                    <select
+                                        value={item.taskpriority}
+                                        onChange={(e) => handlePriorityChange(item._id, e.target.value)}
+                                        className={`border border-gray-400 p-3 rounded-md ${
+                                        item.taskpriority === "Critical" ? "bg-red-600 text-white" :
+                                        item.taskpriority === "High" ? "bg-orange-500 text-white" :
+                                        item.taskpriority === "Medium" ? "bg-yellow-300 text-black" :
+                                        item.taskpriority === "Low" ? "bg-green-500 text-black" : "bg-white"
+                                        }`}
+                                    >
+                                        {priorities.map((p, index) => (
+                                        <option
+                                            key={index}
+                                            value={p}
+                                            className="bg-white text-black " 
+                                        >
+                                            {p}
+                                        </option>
+                                        ))}
+                                    </select>
+                                    </td>
+
+
 
                                 <td className="p-4 text-center">
                                     <select
@@ -193,30 +291,29 @@ const Tasks = () => {
                                         className="border border-gray-400 p-2 rounded-md"
                                     >
                                         {taskstatus.map((status, index) => (
-                                            <option key={index} value={status}>
-                                                {status}
-                                            </option>
+                                            <option key={index} value={status}>{status}</option>
                                         ))}
                                     </select>
                                 </td>
-                                <td className='p-4 text-center'>
+
+                                <td className="p-4 text-center">
                                     <Link to={`/edittask/${item._id}`}>
-                                        <button className="bg-blue-500 text-white px-4 py-2 w-[50px] rounded-md mr-2 hover:bg-blue-600 transition">
-                                            <i className="fas fa-edit"></i>
+                                            <button className="bg-blue-500 text-white px-4 py-2 w-[50px] rounded-md mr-2 hover:bg-blue-600 transition">
+                                                <i className="fas fa-edit"></i>
+                                            </button>
+                                        </Link>
+                                        <button className="bg-red-500 text-white w-[50px] px-4 py-2 rounded-md hover:bg-red-600 transition" onClick={() => deleteTask(item._id)}>
+                                            <i className="fas fa-trash"></i>
                                         </button>
-                                    </Link>
-                                    <button className="bg-red-500 text-white w-[50px] px-4 py-2 rounded-md hover:bg-red-600 transition" onClick={() => deleteTask(item._id)}>
-                                        <i className="fas fa-trash"></i>
-                                    </button>
-                                    <Link to={`/manualtimelog/${item._id}`}>
-                                        <button className="bg-green-500 text-white px-4 py-2 mx-2 w-[50px] rounded-md mr-2 hover:bg-green-600 transition">
-                                            <i className="fas fa-clock"></i>
+                                        <Link to={`/manualtimelog/${item._id}`}>
+                                            <button className="bg-green-500 text-white px-4 py-2 mx-2 w-[50px] rounded-md mr-2 hover:bg-green-600 transition">
+                                                <i className="fas fa-clock"></i>
+                                            </button>
+                                        </Link>
+                                        <button className="text-black px-4 py-2 mx-2 rounded-md transition" onClick={() => taskAction(item._id)}>
+                                            {activeTaskId === item._id ? <FaStop style={{color:'green'}}/> : <FaPlay style={{ color: 'red' }} />
+                                        }
                                         </button>
-                                    </Link>
-                                    <button className="text-black px-4 py-2 mx-2 rounded-md transition" onClick={() => taskAction(item._id)}>
-                                        {activeTaskId === item._id ? <FaStop style={{color:'green'}}/> : <FaPlay style={{ color: 'red' }} />
-                                    }
-                                    </button>
                                 </td>
                             </tr>
                         ))}

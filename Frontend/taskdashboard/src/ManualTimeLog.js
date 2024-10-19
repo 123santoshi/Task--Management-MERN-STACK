@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import './tailwind.css';
 import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const initial_time_values = {
     time: "",
@@ -41,8 +43,9 @@ const ManualTimeLog = () => {
         try {
             const data = await axios.post(`http://localhost:8000/tasks/logtime/${id}`, logvalues);
             console.log("data==", data);
-            alert("Time logged successfully");
-            navigate("/tasks");
+            toast.success("Time logged successfully");
+            setTimeout(()=>{  navigate("/tasks");},2000)
+           
         } catch (error) {
             console.error("Error logging time:", error);
         }
@@ -53,37 +56,44 @@ const ManualTimeLog = () => {
     }, [id]);
 
     return (
-        <div className="flex justify-center items-center h-screen bg-gray-100">
-            <form className="w-full max-w-lg p-6 bg-white border border-gray-300 rounded-lg shadow-md" onSubmit={submitHandler}>
-                <h2 className="text-2xl font-bold text-red-500 mb-5">Manual Time Log</h2>
-                <div className="mb-5">
-                    <label className="block text-lg font-bold text-left text-gray-700 my-2">Enter Time in Minutes</label>
-                    <input
-                        type="text"
-                        placeholder="Enter Time In Minutes"
-                        onChange={changeHandler}
-                        name="time"
-                        value={logvalues.time}
-                        className="mt-1 block w-full p-4 border border-gray-600 rounded-md focus:outline-none focus:ring focus:ring-blue-300"
-                    />
-                </div>
-
-                <div className="mb-5">
-                    <label className="block text-lg font-bold text-left text-gray-700">Enter Description</label>
-                    <textarea
-                        placeholder="Enter Description"
-                        onChange={changeHandler}
-                        name="description"
-                        value={logvalues.description}
-                        className="mt-1 block w-full p-4 border border-gray-600 rounded-md focus:outline-none focus:ring focus:ring-blue-300"
-                    ></textarea>
-                </div>
-
-                <button type="submit" className="w-full bg-blue-500 text-white p-4 rounded-md hover:bg-blue-600 transition">
-                    Log Time
-                </button>
-            </form>
-        </div>
+        <div className="flex justify-center items-center min-h-screen bg-gray-50">
+        <ToastContainer position="top-center" autoClose={2000}/>
+        <form className="w-full max-w-md p-8 bg-white border border-gray-200 rounded-lg shadow-lg" onSubmit={submitHandler}>
+            <h2 className="text-3xl font-semibold text-red-500 mb-6">Manual Time Log</h2>
+    
+            <div className="mb-6">
+                <label className="block text-lg font-medium text-gray-700 mb-2">Enter Time in Minutes</label>
+                <input
+                    type="text"
+                    placeholder="Enter Time In Minutes"
+                    onChange={changeHandler}
+                    name="time"
+                    value={logvalues.time}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition duration-300"
+                />
+            </div>
+    
+            <div className="mb-6">
+                <label className="block text-lg font-medium text-gray-700 mb-2">Enter Description</label>
+                <textarea
+                    placeholder="Enter Description"
+                    onChange={changeHandler}
+                    name="description"
+                    value={logvalues.description}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition duration-300"
+                    rows="4"
+                ></textarea>
+            </div>
+    
+            <button
+                type="submit"
+                className="w-full bg-blue-600 text-white font-medium py-3 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-300"
+            >
+                Log Time
+            </button>
+        </form>
+    </div>
+    
     );
 };
 

@@ -1,7 +1,10 @@
 import axios from 'axios';
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import "./tailwind.css"
+import "./tailwind.css";
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
 
 
 const Signup = () => {
@@ -14,6 +17,7 @@ const Signup = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(initialDetails);
   const [error, setError] = useState(null); 
+
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -30,7 +34,7 @@ const Signup = () => {
       const response = await axios.post("http://localhost:8000/users/signup", user);
       console.log("response==",response);
       if (response.status === 201) { 
-        alert("User Created Successfully");
+        toast.success("User Created Successfully");
         navigate("/login");
       }
     } catch (err) {
@@ -40,6 +44,7 @@ const Signup = () => {
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
+      <ToastContainer position="top-center" autoClose={2000}/>
       <form onSubmit={handleSubmit} className="w-full max-w-md bg-white shadow-lg rounded-lg px-8 py-6">
       <h1 className="text-2xl font-bold text-red-700 text-center mb-6">Signup</h1>
 

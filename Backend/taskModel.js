@@ -32,6 +32,10 @@ const taskSchema = new mongoose.Schema({
     type: String,
     default: 'New',
   },
+  taskpriority:{
+    type:String,
+    default:'Critical'
+  },
   isrecurring:{
     type:Boolean,
     default:false
@@ -46,11 +50,21 @@ const taskSchema = new mongoose.Schema({
     time: { type: String },
     description: { type: String ,default:"Automatic Time Logged" },
     logdate: { type: Date, default: Date.now }
-}]  
+  }]  ,
+  history: [
+    {
+      changedby: { type: String }, 
+      oldstatus: { type: mongoose.Schema.Types.Mixed  }, 
+      newstatus: {type: mongoose.Schema.Types.Mixed  }, 
+      changedat: { type: Date, default: Date.now } 
+    }
+  ]
 });
 
 const taskModel = mongoose.model(collectionName, taskSchema);
 const taskRouter = express.Router();
+const TaskStatus= ["New", "NotStarted", "InProgress", "DevCompleted", "Testing", "Completed"]
+const Priority=["Critical","High","Low","Medium"]
 
 
 const sendTaskAddedMail = async (username, email, taskname) => {
@@ -177,8 +191,8 @@ const setRecurringTasks = async () => {
         if (currentTaskDate <= recurring_end_date) {
 
           await taskModel.updateOne(
-            { _id: item._id }, // Find the current task by ID
-            { taskstatus: "Completed" } // Update its status to completed
+            { _id: item._id }, 
+            { taskstatus: "Completed" } 
           );
 
           const newTask = new taskModel({
@@ -203,7 +217,7 @@ const setRecurringTasks = async () => {
 };
 
 
-cron.schedule('30 9 * * *', () => {
+cron.schedule('55 10 * * *', () => {
   console.log('Running a task on the everyday at 9 AM');
   setRecurringTasks();
   helloWorld();
@@ -292,6 +306,8 @@ taskRouter.post("/logtime/:id", async (req, res) => {
 });
 
 
+
+
 // POST method to add a new task
 
 taskRouter.post(
@@ -348,21 +364,28 @@ taskRouter.post(
   })
 );
 
-
-
-
-
-
 //get the taskstatus
 taskRouter.get("/taskstatus", async(req,res)=>{
   try{
-    const taskstatus= ["New", "NotStarted", "InProgress", "DevCompleted", "Testing", "Completed"]
-    res.json({taskstatus})
+    res.json({TaskStatus})
   }
   catch(err){
     res.status(500).json({error:" Error while fetching the task statuses"  , details:err.response})
   }
 })
+
+//to get the priorities
+taskRouter.get("/priorities", async(req,res)=>{
+  try{
+    res.json({Priority})
+  }
+  catch(err){
+    res.status(500).json({error:" Error while fetching the Priorities list"  , details:err.response})
+  }
+})
+
+
+
 
 // Get a task by ID
 taskRouter.get('/:id', async (req, res) => {
@@ -400,18 +423,88 @@ taskRouter.get('/', async (req, res) => {
 });
 
 
+// PUT route to update the task
+taskRouter.put('/:id', async (req, res) => {
+  const { id } = req.params;
+  const changedBy = req.body.username; 
+  try {
+    const existingTask = await taskModel.findById(id).populate('owner', 'username');
+
+    if (!existingTask) {
+      return res.status(404).json({ error: 'Task ID not found to update the task' });
+    }
+
+    const changes = [];
+    const new_data = {};
+
+    const checkAndLogChange = (field, oldValue, newValue) => {
+      if (oldValue !== newValue && newValue !== undefined) {
+        changes.push({
+          changedby: changedBy,
+          oldstatus: { field, value: oldValue },
+          newstatus: { field, value: newValue },
+          changedat: new Date(),
+        });
+        new_data[field] = newValue;
+      }
+    };
+
+    // Helper function to format dates to 'YYYY-MM-DD'
+    const formatDate = (dateValue) => {
+      return dateValue instanceof Date ? dateValue.toISOString().split('T')[0] : dateValue;
+    };
+
+    // Check and log changes for each field
+    checkAndLogChange('taskname', existingTask.taskname, req.body.taskname);
+    checkAndLogChange('startdate', formatDate(existingTask.startdate), formatDate(req.body.startdate));
+    checkAndLogChange('owner', existingTask.owner?._id, req.body.owner);
+    checkAndLogChange('enddate', formatDate(existingTask.enddate), formatDate(req.body.enddate));
+    checkAndLogChange('taskpriority', existingTask.taskpriority, req.body.taskpriority); // Correct handling of taskpriority
+    checkAndLogChange('taskstatus', existingTask.taskstatus, req.body.taskstatus);
+    checkAndLogChange('isrecurring', existingTask.isrecurring, req.body.isrecurring);
+    checkAndLogChange('recuringfrequency', existingTask.recuringfrequency, req.body.recuringfrequency);
+    checkAndLogChange('recuringenddate', formatDate(existingTask.recuringenddate), formatDate(req.body.recuringenddate));
+
+    // If changes were detected, append them to the task's history
+    if (changes.length > 0) {
+      existingTask.history.push(...changes);
+      new_data.history = existingTask.history; 
+    }
+
+    // Update the task with only modified fields
+    const updatedTask = await taskModel.findByIdAndUpdate(id, {
+      ...existingTask.toObject(),
+      ...new_data // Only updated fields
+    }, { new: true }).populate('owner', 'username');
+
+    if (updatedTask) {
+      return res.status(200).json(updatedTask);
+    } else {
+      return res.status(404).json({ error: 'Task ID not found to update the task' });
+    }
+
+  } catch (err) {
+    console.error("Error while updating the task:", err.message);
+    return res.status(500).json({
+      error: 'Error while updating the task',
+      details: err.message,
+    });
+  }
+});
+
+
+
 
 
 
 // Update a task
-taskRouter.put('/:id', async (req, res) => {
+/*taskRouter.put('/:id', async (req, res) => {
   const { id } = req.params;
   console.log("re body==",req.body);
   const new_data = {
     ...req.body,
     
   };
-
   console.log("New data to update:", new_data);
   try {
     const updatedTask = await taskModel.findByIdAndUpdate(id, new_data, { new: true })
@@ -430,7 +523,7 @@ taskRouter.put('/:id', async (req, res) => {
       details: err.message,
     });
   }
-});
+});*/
 
 
 
@@ -453,5 +546,11 @@ taskRouter.delete('/:id', async (req, res) => {
     });
   }
 });
+
+
+
+
+
+
 
 export default taskRouter;

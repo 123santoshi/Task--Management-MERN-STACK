@@ -10,10 +10,12 @@ import ManualTimeLog from './ManualTimeLog';
 import TimeLogReport from './TimeLogReport';
 import TaskCountBasedOnUsers from './TaskCountBasedOnUsers';
 import TaskCountBasedOnStatus from './TaskCountBasedOnStatus';
+import TaskCountBasedOnPriority from './TaskCountBasedOnPriority';
 import TotalTaskTime from './TotalTaskTime';
 import Home from './Home';
 import Reports from './Reports';
 import UserDashboard from './UserDashboard';
+import History from './History';
 
 function App() {
   return (
@@ -43,6 +45,8 @@ function AppRoutes() {
           <Route path="timelogreport" element={<TimeLogReport />} />
           <Route path="taskcountstatus" element={<TaskCountBasedOnStatus />} />
           <Route path="taskcountusers" element={<TaskCountBasedOnUsers />} />
+          <Route path="taskcountpriority" element={<TaskCountBasedOnPriority />} />
+
           <Route path="totaltasktime" element={<TotalTaskTime />} />
         </Route>
         <Route path="/edituser/:id" element={<AddEditUser />} />
@@ -51,7 +55,7 @@ function AppRoutes() {
         <Route path="/addtask" element={<AddEditTask />} />
         <Route path="/taskdashboard" element={<Taskdashboard />} />
         <Route path="/manualtimelog/:id" element={<ManualTimeLog />} />
-
+        <Route path="/history" element={<History/>} />
         {/* Default redirect from root to users */}
         <Route path="*" element={<Navigate to="/users" />} />
       </Routes>
