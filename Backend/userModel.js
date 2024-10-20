@@ -71,8 +71,24 @@ const sendMail = async (email, otp) => {
     from: process.env.SMTP_USER,
     to: email,
     subject: 'Your OTP Code',
-    html: `Your OTP code is <strong>${otp}</strong>. This OTP is valid for 10 minutes.`,
+    html: `
+      <div style="width: 100%; padding: 20px; font-family: Arial, sans-serif; background-color: #f4f4f4;">
+        <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1);">
+          <h2 style="text-align: center; color: #333;">Your OTP Code</h2>
+          <p style="font-size: 16px; color: #555;">Dear User,</p>
+          <p style="font-size: 16px; color: #555;">Please use the following OTP code to proceed with your action:</p>
+          <div style="text-align: center; margin: 20px 0;">
+            <span style="display: inline-block; padding: 10px 20px; background-color: #007bff; color: #ffffff; border-radius: 5px; font-size: 24px; letter-spacing: 2px;"><strong>${otp}</strong></span>
+          </div>
+          <p style="font-size: 16px; color: #555;">This OTP is valid for 10 minutes. If you did not request this code, please ignore this email.</p>
+          <p style="font-size: 16px; color: #555;">Thank you,</p>
+          <p style="font-size: 16px; font-weight:bold; color: #555; margin-top:20px">Best regards,<br>Task Timer Team</p>
+
+         
+      </div>
+    `,
   };
+  
 
   return transporter.sendMail(mailOptions);
 };

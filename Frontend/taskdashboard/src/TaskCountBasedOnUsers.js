@@ -72,7 +72,7 @@ const TaskCountBasedOnUsers = () => {
 
   return (
     <div className='w-[auto] flex items-center  justify-center h-screen border-2 bg-gray-100 flex-col'>
-      <h1 className="text-2xl font-bold mb-4 text-blue-600">Task Count Per User</h1>
+      <h1 className="text-2xl font-bold mb-4 text-blue-600">Tasks Count Per User</h1>
       <ResponsiveContainer  height={450}>
         <BarChart data={data} margin={{ top: 30, right: 30, left: 30, bottom: 30 }}>
           <CartesianGrid strokeDasharray="3 3" />

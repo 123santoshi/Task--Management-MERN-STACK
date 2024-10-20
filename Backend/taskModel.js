@@ -104,8 +104,7 @@ const sendTaskAddedMail = async (username, email, taskname) => {
                 You can log in to your account to view the task details and start working on it.
             </p>
             <a href="http://yourdashboardlink.com" style="display: inline-block; padding: 10px 15px; margin-top: 15px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 5px;">View Task</a>
-            <h4 style="color: #333; margin-top: 20px;">Best regards,</h4>
-            <h4 style="color: #333; margin: 0;">Task Timer Team</h4>
+             <p style="font-size: 16px; font-weight:bold; color: #555; margin-top:20px">Best regards,<br>Task Timer Team</p>
         </div>
       </div>
 
@@ -159,8 +158,7 @@ const sendTaskDueMail = async (username, email, taskname) => {
                 Please log in to your account to check the task details and complete it before the deadline.
             </p>
             <a href="http://yourdashboardlink.com" style="display: inline-block; padding: 10px 15px; margin-top: 15px; background-color: #d9534f; color: white; text-decoration: none; border-radius: 5px;">View Task</a>
-            <h4 style="color: #333; margin-top: 20px;">Best regards,</h4>
-            <h4 style="color: #333; margin: 0;">Task TimerTeam</h4>
+             <p style="font-size: 16px; font-weight:bold; color: #555; margin-top:20px">Best regards,<br>Task Timer Team</p>
         </div>
       </div>
     `,

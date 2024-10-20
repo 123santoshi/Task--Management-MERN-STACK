@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import "./tailwind.css";
 import axios from 'axios';
 import { Link, useNavigate } from 'react-router-dom';
+import taskimg from "./tasks.jpg"
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -9,7 +10,7 @@ const Login = () => {
   const [showOtpBox, setShowOtpBox] = useState(false);
   const [otpSuccessMsg, setOtpSuccessMsg] = useState(''); 
   const [otpErrorMsg, setOtpErrorMsg] = useState(''); 
-  const [role,setRole]= useState("");
+  const [role, setRole] = useState("");
 
   const navigate = useNavigate();
 
@@ -26,16 +27,13 @@ const Login = () => {
     e.preventDefault();
     try {
       const response = await axios.post("http://localhost:8000/users/send-otp", { email });
-      console.log("OTP sent response:", response.data);
       setOtpSuccessMsg("OTP sent successfully!");
       setOtpErrorMsg(''); 
     } catch (error) {
       if (error.response && error.response.data) {
-        console.error("Error sending OTP:", error.response.data);
         setOtpErrorMsg(error.response.data.message);
         setOtpSuccessMsg('');
       } else {
-        console.error("Error sending OTP:", error.message);
         setOtpErrorMsg("An error occurred while sending the OTP.");
         setOtpSuccessMsg(''); 
       }
@@ -46,16 +44,13 @@ const Login = () => {
     e.preventDefault();
     try {
       const response = await axios.post("http://localhost:8000/users/verify-otp", { email, otp: enterOtp });
-      console.log("OTP verification response:", response.data);
       setOtpSuccessMsg("OTP verified successfully!");
-      console.log("role==",response.data.role);
       setRole(response.data.role);
       setOtpErrorMsg('');
 
-      // Store the role in local storage or global state
       localStorage.setItem('role', response.data.role);
       localStorage.setItem('username', response.data.username);
-      
+
       if (response.data.role === 'User') {
         navigate("/userdashboard"); 
       } else {
@@ -63,11 +58,9 @@ const Login = () => {
       }
     } catch (error) {
       if (error.response && error.response.data) {
-        console.error("Error verifying OTP:", error.response.data);
         setOtpErrorMsg(error.response.data.message);
         setOtpSuccessMsg('');
       } else {
-        console.error("Error verifying OTP:", error.message);
         setOtpErrorMsg("An error occurred while verifying the OTP.");
         setOtpSuccessMsg('');
       }
@@ -75,59 +68,81 @@ const Login = () => {
   };
 
   return (
-    <div className="flex items-center justify-center h-screen border-2 bg-gray-100">
-      <form className="p-6 bg-white shadow-md rounded bg-white-100 border-black">
-        <h1 className="text-2xl text-red-500 font-bold mb-4">Login</h1>
+    <div className="flex items-center justify-center min-h-screen bg-gray-100 p-10">
+      <div className="flex w-full bg-white shadow-lg rounded-lg overflow-hidden">
+        {/* Left side with the image */}
+        <div className="hidden md:flex w-3/4 bg-cover">
+          <img src={taskimg} alt="Tasks" className="w-full object-cover"/>          
+        </div>
+  
+        <div className="flex items-center justify-center w-full md:w-1/4 p-10">
+          <form className="p-6">
+            <h1 className="text-3xl font-bold text-gray-800 mb-6 text-center">Login</h1>
 
-        <input
-          type="email"
-          placeholder="Enter email address"
-          value={email}
-          name="email"
-          onChange={changeHandler}
-          required
-          className="w-full px-4 py-4  border-black border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
+            <div className="mb-4">
+              <input
+                type="email"
+                placeholder="Enter email address"
+                value={email}
+                name="email"
+                onChange={changeHandler}
+                required
+                className="w-full p-5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
 
-        {showOtpBox && (
-          <button
-            type="button" // Change type to button to prevent form submission
-            onClick={sendOtp}
-            className="w-full mt-4 p-5 bg-blue-500 text-white rounded"
-          >
-            Send OTP
-          </button>
-        )}
+            {showOtpBox && (
+              <div className="mb-4">
+                <button
+                  type="button"
+                  onClick={sendOtp}
+                  className="w-full p-5 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg transition duration-200"
+                >
+                  Send OTP
+                </button>
+              </div>
+            )}
 
-        <br/><br/>
-        {otpSuccessMsg && 
-          <>
-            <input 
-              type="text" 
-              placeholder="Enter OTP" 
-              name="otp" 
-              value={enterOtp}
-              onChange={otpHandler} 
-              className="w-full p-5 border border-black-300 rounded mb-4"
-            />
+            {otpSuccessMsg && (
+              <>
+                <div className="mb-4">
+                  <input 
+                    type="text" 
+                    placeholder="Enter OTP" 
+                    name="otp" 
+                    value={enterOtp}
+                    onChange={otpHandler} 
+                    className="w-full p-5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
 
-            <button 
-              type="button" // Change type to button to prevent form submission
-              onClick={verifyOtp} 
-              className="w-full mt-4 p-5 bg-blue-500 text-white rounded"
-            >
-              Verify OTP
-            </button>
-          </>
-        }
+                <div className="mb-6">
+                  <button 
+                    type="button"
+                    onClick={verifyOtp} 
+                    className="w-full p-5 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg transition duration-200"
+                  >
+                    Verify OTP
+                  </button>
+                </div>
+              </>
+            )}
 
-        <br/><br/>
+            {otpSuccessMsg && (
+              <p className="text-green-600 font-medium mb-4">{otpSuccessMsg}. Please check your email for the OTP.</p>
+            )}
 
-        {otpSuccessMsg && <p className="text-green-500 font-bold">{otpSuccessMsg}. Please check your email for the OTP.</p>}
-        {otpErrorMsg && <p className="text-red-500 font-bold">{otpErrorMsg}</p>}
+            {otpErrorMsg && (
+              <p className="text-red-600 font-medium mb-4">{otpErrorMsg}</p>
+            )}
 
-        <h3 className='text-red-500 font-bold font-25px'>Don't have an account ? Click here to <Link to="/">SignUp</Link></h3>
-      </form>
+              <br/>
+            <p className="text-center text-xl font-bold text-red-400 mt-4">
+              Don't have an account ? Click here to <Link to="/" className="text-blue-500 hover:underline">Sign Up</Link>
+            </p>
+          </form>
+        </div>
+      </div>
     </div>
   );
 };
