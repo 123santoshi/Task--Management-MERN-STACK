@@ -33,7 +33,7 @@ const TaskCountBasedOnStatus = () => {
 
   const getUsers = async () => {
     try {
-      const res = await axios.get('http://localhost:8000/users');
+      const res = await axios.get('http://localhost:8000/users/activeusers');
       setUsers(res.data);
     } catch (error) {
       console.error('Error fetching users:', error);
@@ -67,7 +67,7 @@ const TaskCountBasedOnStatus = () => {
   }, [tasks, taskStatuses, searchUser]);
 
   return (
-    <div className="flex items-center justify-center h-screen border-2 bg-gray-100 flex-col">
+    <div className="flex items-center h-screen border-2 bg-gray-100 flex-col">
     
       <select
           value={searchUser}
@@ -82,9 +82,9 @@ const TaskCountBasedOnStatus = () => {
           ))}
       </select>
       <br/><br/><br/>
-      <h1 className="text-2xl font-bold m-4 text-violet-600">Task Count Based On Status</h1>
-        <ResponsiveContainer width="50%" height={450}>
-          <BarChart data={data} margin={{ top: 30, right: 30, left: 30, bottom: 30 }}>
+      <h1 className="w-auto text-2xl font-bold m-4 text-violet-600">Task Count Based On Status</h1>
+      <ResponsiveContainer className="w-auto" height={450}>
+        <BarChart data={data} margin={{ top: 30, right: 30, left: 30, bottom: 30 }}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis 
               dataKey="taskstatus" 
@@ -109,7 +109,7 @@ const TaskCountBasedOnStatus = () => {
               allowDecimals={false}
             />
             <Tooltip />
-            <Bar dataKey="taskstatuscount" fill="#8884d8"  />
+            <Bar dataKey="taskstatuscount" fill="#8884d8" barSize={50} />
           </BarChart>
         </ResponsiveContainer>
       </div>

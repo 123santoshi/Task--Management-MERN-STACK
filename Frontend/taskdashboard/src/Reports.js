@@ -21,6 +21,12 @@ const Reports = () => {
             </li>
           </Link>
 
+          <Link to="taskcountpriority">
+            <li className={`w-full mb-5 text-lg border border-2 p-10 rounded-md hover: ${getActiveStyle('taskcountpriority')}`}>
+              Tasks Count Based On The Priority
+            </li>
+          </Link>
+
           <Link to="taskcountstatus">
             <li className={`w-full mb-5 text-lg border border-2 p-10 rounded-md hover: ${getActiveStyle('taskcountstatus')}`}>
               Tasks Count Based On The Task Status
@@ -30,12 +36,6 @@ const Reports = () => {
           <Link to="taskcountusers">
             <li className={`w-full mb-5 text-lg border border-2 p-10 rounded-md hover: ${getActiveStyle('taskcountusers')}`}>
               Tasks Count Based On The Users
-            </li>
-          </Link>
-
-          <Link to="taskcountpriority">
-            <li className={`w-full mb-5 text-lg border border-2 p-10 rounded-md hover: ${getActiveStyle('taskcountpriority')}`}>
-              Tasks Count Based On The Priority
             </li>
           </Link>
 

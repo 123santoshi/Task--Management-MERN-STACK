@@ -20,7 +20,7 @@ const AddEditUser = () => {
     try {
       setLoading(true);  // Show loading while fetching data
       const { data } = await axios.get(`http://localhost:8000/users/${id}`);
-      console.log(data);
+      console.log("get data by user id==",data);
       setUserData(data);
     } catch (error) {
       console.error('Error fetching user:', error);

@@ -25,16 +25,16 @@ const userSchema = new mongoose.Schema({
     enum: ['Admin', 'User'],
     default: 'User',
   },
+  active:{
+    type:Boolean,
+    default:true
+  },
   otp: {
     type: String,
   },
   otpExpires: {
     type: Date,
   },
-  active:{
-    type:Boolean,
-    default:true
-  }
 });
 
 // Create UserModel
@@ -202,20 +202,38 @@ userRouter.post('/verify-otp', expressAsyncHandler(async (req, res) => {
 }));
 
 
-
-// GET route to fetch a single user by ID
-userRouter.get('/:id', async (req, res) => {
-  const { id } = req.params;
+// Define route to fetch only active users
+userRouter.get('/activeusers', async (req, res) => {
   try {
-    const user = await UserModel.findById(id);
-    if (user) {
-      return res.status(200).json(user);
+    const activeUsers = await UserModel.find({ active: true });
+    console.log("active users==",activeUsers)
+    if (activeUsers.length === 0) {
+      return res.status(404).json({ message: 'No active users found' });
     }
-    return res.status(404).json({ message: 'User not found' });
+
+    return res.status(200).json(activeUsers);
   } catch (err) {
-    return res.status(500).json({ message: 'Error while retrieving the user', error: err });
+    return res.status(500).json({ message: 'Error fetching active users', error: err.message });
   }
 });
+
+
+
+// Route to fetch inactive users
+userRouter.get('/inactiveusers', async (req, res) => {
+  try {
+    const inactiveUsers = await UserModel.find({ active: false });
+    if (inactiveUsers.length === 0) {
+      return res.status(404).json({ message: 'No inactive users found' });
+    }
+    console.log("Inactive users:", inactiveUsers);
+    return res.status(200).json(inactiveUsers);
+  } catch (err) {
+    console.error('Error fetching inactive users:', err);
+    return res.status(500).json({ message: 'Error fetching inactive users', error: err.message });
+  }
+});
+
 
 
 //send invitaton to the user
@@ -235,29 +253,26 @@ userRouter.get("/invite/:id", async (req, res) => {
   }
 });
 
+// GET route to fetch a single user by ID
+userRouter.get('/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const user = await UserModel.findById(id);
+    if (user) {
+      return res.status(200).json(user);
+    }
+    return res.status(404).json({ message: 'User not found' });
+  } catch (err) {
+    return res.status(500).json({ message: 'Error while retrieving the user', error: err });
+  }
+});
+
+
+
 
 //fecth to get active users 
-/*userRouter.get('/activeusers', async (req, res) => {
-  try {
-    const users = await UserModel.find({active:true});
-    console.log("active users==",users);
-    return res.status(200).json(users);
-  } catch (err) {
-    return res.status(500).json({ message: 'Error in backend while fetching active users data', error: err });
-  }
-});
+// Route to fetch active users
 
-//fetch to get the inactive users 
-userRouter.get('/inactiveusers', async (req, res) => {
-  try {
-    const users = await UserModel.find({active:false});
-    console.log("inactive users==",users);
-    return res.status(200).json(users);
-  } catch (err) {
-    return res.status(500).json({ message: 'Error in backend while fetching inactive users data', error: err });
-  }
-});
-*/
 
 // GET route to fetch all users
 userRouter.get('/', async (req, res) => {
@@ -326,6 +341,43 @@ userRouter.delete('/:id', async (req, res) => {
     return res.status(500).json({ message: 'Error while deleting the user', error: err });
   }
 });
+
+
+userRouter.put('/activateuser/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const existedUser = await UserModel.findById(id);
+    if (!existedUser) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    existedUser.active = true;
+    await existedUser.save(); 
+    console.log('Updated user with active set to true:', existedUser);
+    return res.status(200).json({ message: 'User actived successfully', user: existedUser });
+  } catch (err) {
+    return res.status(500).json({ message: 'Error while marking user as active', error: err });
+  }
+});
+
+
+userRouter.put('/inactive/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const existedUser = await UserModel.findById(id);
+    if (!existedUser) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    existedUser.active = false;
+    await existedUser.save(); 
+    console.log('Updated user with active set to false:', existedUser);
+    return res.status(200).json({ message: 'User inactived successfully', user: existedUser });
+  } catch (err) {
+    return res.status(500).json({ message: 'Error while marking user as inactive', error: err });
+  }
+});
+
+
+
 
 
 

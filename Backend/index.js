@@ -31,13 +31,18 @@ app.listen(port, () => {
 app.get("/",async(req,res)=> res.json("get method calling "))
 
 app.use("/users",userRouter)
-app.get("/users", userRouter)
 app.get("/users/activeusers", userRouter)
 app.get("/users/inactiveusers", userRouter)
 app.get("/users/:id",userRouter)
+app.get("/users", userRouter)
+
 app.delete("/users/:id",userRouter)
 app.get("/users/invite/:id",userRouter)
 app.put("/users",userRouter)
+app.put("/users/activateuser/:id",userRouter)
+
+app.put("/users/inactive/:id",userRouter)
+
 
 
 app.use("/tasks", taskmodel)

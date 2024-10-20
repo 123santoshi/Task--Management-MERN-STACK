@@ -44,11 +44,11 @@ const TaskCountBasedOnPriority = () => {
       case 'Critical':
         return '#FF0000'; // Red for Critical
       case 'High':
-        return '#FFD700'; // Yellow for High
+        return '#FFA500'; // orange for High
       case 'Medium':
-        return '#32CD32'; // Green for Medium
+        return ' #FFD700'; // Green for Medium
       case 'Low':
-        return '#1E90FF'; // Blue for Low
+        return '#32CD32'; // Blue for Low
       default:
         return '#8884d8'; // Default color
     }
@@ -82,7 +82,7 @@ const TaskCountBasedOnPriority = () => {
   }, [tasks, priorities, searchUser]);
 
   return (
-    <div className="flex items-center justify-center h-screen border-2 bg-gray-100 flex-col">
+    <div className="flex items-center h-screen border-2 bg-gray-100 flex-col">
       <select
           value={searchUser}
           onChange={(e) => setSearchUser(e.target.value)}

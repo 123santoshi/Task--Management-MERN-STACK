@@ -9,15 +9,42 @@ import * as XLSX from 'xlsx';
 const Users = () => {
   const [users, setUsers] = useState([]);
   const [searchUser, setSearchUser] = useState("");
-  const [showimportexportoption,setImportExportOption]=useState(false);
+  const [showImportExportOption, setImportExportOption] = useState(false);
+  const [showActiveUsers, setShowActiveUsers] = useState(true);
 
   const getUsers = async () => {
     try {
-      const res = await axios.get('http://localhost:8000/users');
-      console.log('get users==', res.data);
-      setUsers(res.data); // Set the fetched users in the state
+      const endpoint = showActiveUsers ? "activeusers" : "inactiveusers";
+      const { data } = await axios.get(`http://localhost:8000/users/${endpoint}`);
+      setUsers(data || []);
     } catch (error) {
       console.error('Error fetching users:', error);
+      toast.error(error.response?.data || "Error fetching users");
+    }
+  };
+
+  const activateUser = async (id) => {
+    if (window.confirm("Do you want to activate the user?")) {
+      try {
+        const res = await axios.put(`http://localhost:8000/users/activateuser/${id}`);
+        toast.success(res.data.message);
+        getUsers();
+      } catch (error) {
+        console.error("Error activating user:", error);
+        toast.error("An error occurred while activating the user.");
+      }
+    }
+  };
+  const inActivateUser = async (id) => {
+    if (window.confirm("Do you want to inactivate the user?")) {
+      try {
+        const res = await axios.put(`http://localhost:8000/users/inactive/${id}`);
+        toast.success(res.data.message);
+        getUsers();
+      } catch (error) {
+        console.error("Error inactivating user:", error);
+        toast.error("An error occurred while inactivating the user.");
+      }
     }
   };
 
@@ -48,17 +75,23 @@ const Users = () => {
     setSearchUser(e.target.value);
   };
 
-  // Download full user list as CSV
   const downloadCSV = () => {
-    const headers = ["Username", "Email", "Role"];
-    const rows = filteredUsers.map(user => [
+    if (users.length === 0) {
+      toast.error("No users available to download.");
+      return;
+    }
+
+    const headers = ["UserId", "Username", "Email", "Role"];
+    const rows = users.map(user => [
+      user._id,
       user.username,
       user.email,
-      user.role
+      user.role,
     ]);
-    let csvContent = "data:text/csv;charset=utf-8,"
-      + headers.join(",") + "\n"
+    const csvContent = "data:text/csv;charset=utf-8," 
+      + headers.join(",") + "\n" 
       + rows.map(e => e.join(",")).join("\n");
+    
     const link = document.createElement("a");
     link.setAttribute("href", encodeURI(csvContent));
     link.setAttribute("download", "Users_List.csv");
@@ -67,16 +100,16 @@ const Users = () => {
     document.body.removeChild(link);
   };
 
-  // Download sample CSV template
   const downloadSampleCSV = () => {
     const headers = ["username", "email", "role"];
     const rows = [
       ["exampleUser", "example@mail.com", "Admin"],
       ["sampleUser", "sample@mail.com", "User"],
     ];
-    let csvContent = "data:text/csv;charset=utf-8,"
-      + headers.join(",") + "\n"
+    const csvContent = "data:text/csv;charset=utf-8," 
+      + headers.join(",") + "\n" 
       + rows.map(e => e.join(",")).join("\n");
+    
     const link = document.createElement("a");
     link.setAttribute("href", encodeURI(csvContent));
     link.setAttribute("download", "Sample_Users_Report.csv");
@@ -85,7 +118,6 @@ const Users = () => {
     document.body.removeChild(link);
   };
 
-  // Upload Excel file and extract user data
   const uploadExcel = (file) => {
     const reader = new FileReader();
     reader.onload = async (e) => {
@@ -93,15 +125,13 @@ const Users = () => {
       const workbook = XLSX.read(data, { type: 'array' });
       const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
       const jsonData = XLSX.utils.sheet_to_json(firstSheet);
-      console.log("jsonata==", jsonData);
       try {
         const res = await axios.post('http://localhost:8000/users/bulk-upload', jsonData);
-        console.log("res form jsondata==", res);
         toast.success(res.data.message);
         getUsers(); // Refresh user list
       } catch (error) {
         console.error('Error uploading users:', error);
-        toast.error("An error occurred while uploading users.");
+        toast.error(error.response.data);
       }
     };
     reader.readAsArrayBuffer(file);
@@ -116,13 +146,14 @@ const Users = () => {
 
   useEffect(() => {
     getUsers();
-  }, []);
+  }, [showActiveUsers]);
 
   const filteredUsers = users.filter(user => {
+    const searchLower = searchUser.toLowerCase();
     return (
-      (user.username && user.username.toLowerCase().includes(searchUser.toLowerCase())) ||
-      (user.email && user.email.toLowerCase().includes(searchUser.toLowerCase())) ||
-      (user.role && user.role.toLowerCase().includes(searchUser.toLowerCase()))
+      (user.username && user.username.toLowerCase().includes(searchLower)) ||
+      (user.email && user.email.toLowerCase().includes(searchLower)) ||
+      (user.role && user.role.toLowerCase().includes(searchLower))
     );
   });
 
@@ -138,11 +169,14 @@ const Users = () => {
           </Link>
           
           <div className="relative inline-block text-left mx-5">
-            <button className="border text-lg font-bold border-black text-black px-10 py-3 rounded-md  focus:outline-none" onClick={()=>setImportExportOption(!showimportexportoption)}>
+            <button 
+              className="border text-lg font-bold border-black text-black px-10 py-3 rounded-md focus:outline-none" 
+              onClick={() => setImportExportOption(!showImportExportOption)}
+            >
               Add Multiple Users
             </button>
-             { showimportexportoption &&
-                <div className="absolute right-0 mt-2 w-full bg-white border rounded-md shadow-lg ">
+            {showImportExportOption && (
+              <div className="absolute right-0 mt-2 w-full bg-white border rounded-md shadow-lg">
                 <button
                   className="block w-full px-4 py-2 text-left text-sm hover:bg-gray-200 text-lg"
                   onClick={downloadSampleCSV}
@@ -159,9 +193,17 @@ const Users = () => {
                   />
                 </label>
               </div>
-            }
+            )}
           </div>
 
+          <div className="relative inline-block text-left ">
+            <button 
+              className="border text-lg font-bold border-black text-black px-10 py-3 rounded-md focus:outline-none" 
+              onClick={() => setShowActiveUsers(!showActiveUsers)}
+            >
+              {showActiveUsers ? "Active Users" : "Inactive Users"}
+            </button>
+          </div>
         </div>
 
         <div className='mb-4 sm:mb-0'>
@@ -175,9 +217,8 @@ const Users = () => {
             onChange={searchHandler}
             className='border border-gray-500 px-10 py-3 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-300 w-full sm:w-auto'
           />
-
           <button className="border border-gray-500 px-10 py-3 mx-3 rounded-md focus:outline-none" onClick={downloadCSV}>
-            <h1>Download Users <i className="fas fa-download"></i></h1>
+            <h1 className="font-bold">Download Users  <i className="fas fa-download"></i></h1>
           </button>
         </div>
       </div>
@@ -190,35 +231,49 @@ const Users = () => {
               <th className="p-4">User Name</th>
               <th className="p-4">Email</th>
               <th className="p-4">Role</th>
-              <th className="p-4">Actions</th>
+              <th className="p-4">Action</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className='text-center'>
             {filteredUsers.length > 0 ? (
-              filteredUsers.map((item) => (
-                <tr key={item._id} className="border-b hover:bg-gray-100">
-                  <td className="p-4 text-center">{item._id}</td>
-                  <td className="p-4 text-center">{item.username}</td>
-                  <td className="p-4 text-center">{item.email}</td>
-                  <td className="p-4 text-center">{item.role}</td>
+              filteredUsers.map(user => (
+                <tr key={user._id} className="border-b hover:bg-gray-200">
+                  <td className="p-4">{user._id}</td>
+                  <td className="p-4">{user.username}</td>
+                  <td className="p-4">{user.email}</td>
+                  <td className="p-4">{user.role}</td>
                   <td className="p-4 text-center">
-                    <Link to={`/edituser/${item._id}`}>
+                    {showActiveUsers ?
+                    <>
+                      <Link to={`/edituser/${user._id}`}>
                       <button className="bg-blue-500 text-white px-4 py-2 w-[50px] rounded-md mr-2 hover:bg-blue-600 transition">
                         <i className="fas fa-edit"></i>
                       </button>
                     </Link>
-                    <button className="bg-red-500 text-white w-[50px] px-4 py-2 rounded-md hover:bg-red-600 transition" onClick={() => deleteUser(item._id)}>
+                    <button className="bg-red-500 text-white w-[50px] px-4 py-2 rounded-md hover:bg-red-600 transition" onClick={() => inActivateUser(user._id)}>
                       <i className="fas fa-trash"></i>
                     </button>
-                    <button className="text-white bg-green-500 w-[50px] px-4 py-2  mx-2 rounded-md hover:bg-green-600 transition" onClick={() => sendInvite(item._id)}>
+                    <button className="text-white bg-green-500 w-[50px] px-4 py-2  mx-2 rounded-md hover:bg-green-600 transition" onClick={() => sendInvite(user._id)}>
                       <i className="fas fa-paper-plane"></i>
                     </button>
+                    </>:
+                    <>
+                    <button className="bg-blue-500 text-white px-4 py-2 w-[50px] rounded-md mr-2 hover:bg-blue-600 transition"
+                    onClick={() => activateUser(user._id)}>
+                      <i className="fas fa-edit"></i>
+                    </button>
+                    
+                    <button className="bg-red-500 text-white w-[50px] px-4 py-2 rounded-md hover:bg-red-600 transition" onClick={() => deleteUser(user._id)}>
+                      <i className="fas fa-trash"></i>
+                    </button>
+                    </>
+                    }  
                   </td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan="4" className="text-center p-4">No users found</td>
+                <td colSpan="5" className="p-4">No users found.</td>
               </tr>
             )}
           </tbody>

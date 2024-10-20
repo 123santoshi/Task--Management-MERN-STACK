@@ -51,7 +51,7 @@ const History = () => {
             <th className="p-4 border-b text-center text-black-600 font-bold text-xl border border-black">Modified Date</th>
             <th className="p-4 border-b text-center text-black-600 font-bold text-xl border border-black">Modified Time</th>
             <th className="p-4 border-b text-center text-black-600 font-bold text-xl border border-black">Task Name</th>
-            <th className="p-4px-4 border-b text-center text-black-600 font-bold text-xl border border-black">Modified Fields Historyb</th>
+            <th className="p-4px-4 border-b text-center text-black-600 font-bold text-xl border border-black">Modified Fields History</th>
           </tr>
         </thead>
         <tbody>

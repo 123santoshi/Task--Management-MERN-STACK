@@ -19,7 +19,7 @@ const TaskCountBasedOnUsers = () => {
 
   const getUsers = async () => {
     try {
-      const res = await axios.get('http://localhost:8000/users');
+      const res = await axios.get('http://localhost:8000/users/activeusers');
       setUsers(res.data);
     } catch (error) {
       console.error('Error fetching users:', error);
@@ -71,9 +71,9 @@ const TaskCountBasedOnUsers = () => {
   }, [tasks, users]);
 
   return (
-    <div className='flex items-center justify-center h-screen border-2 bg-gray-100 flex-col'>
+    <div className='w-[auto] flex items-center  justify-center h-screen border-2 bg-gray-100 flex-col'>
       <h1 className="text-2xl font-bold mb-4 text-blue-600">Task Count Per User</h1>
-      <ResponsiveContainer width="50%" height={450}>
+      <ResponsiveContainer  height={450}>
         <BarChart data={data} margin={{ top: 30, right: 30, left: 30, bottom: 30 }}>
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis 
@@ -100,7 +100,7 @@ const TaskCountBasedOnUsers = () => {
           />
           <Tooltip />
          
-          <Bar dataKey="taskscount" fill="#8884d8" barSize={50} />
+          <Bar dataKey="taskscount" fill="#8884d8" barSize={100} />
         </BarChart>
       </ResponsiveContainer>
     </div>
