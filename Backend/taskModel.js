@@ -34,7 +34,6 @@ const taskSchema = new mongoose.Schema({
   },
   taskpriority:{
     type:String,
-    default:'Critical'
   },
   isrecurring:{
     type:Boolean,
@@ -305,7 +304,54 @@ taskRouter.post("/logtime/:id", async (req, res) => {
   }
 });
 
+//bult taks upload
+taskRouter.post('/bulktasks-upload', expressAsyncHandler(async (req, res) => {
+  const tasks = req.body;
+  const createdTasks = [];
 
+  try {
+    for (const task of tasks) {
+      const { owner, enddate, taskname, ...rest } = task;
+      const user = await UserModel.findOne({ username: owner });
+      if (!user) {
+        return res.status(400).json({ error: `Owner not found for task: ${taskname}` });
+      }
+
+      const parsedEndDate = enddate ? new Date(enddate) : undefined;
+      if (parsedEndDate && isNaN(parsedEndDate.getTime())) {
+        return res.status(400).json({ error: `Invalid end date format for task: ${taskname}` });
+      }
+
+      const newTask = new taskModel({
+        owner: user._id, // Assign the owner's ObjectId
+        taskname,
+        enddate: parsedEndDate,
+        ...rest, 
+      });
+
+      await newTask.save();
+      createdTasks.push(newTask);
+    }
+    const populatedTasks = await taskModel
+      .find({ _id: { $in: createdTasks.map(task => task._id) } })
+      .populate('owner', 'username email'); // Populate the owner's username and email
+
+    console.log("populated tasks:", populatedTasks);
+
+    for (const populatedTask of populatedTasks) {
+      const { username, email } = populatedTask.owner;
+      await sendTaskAddedMail(username, email, populatedTask.taskname);
+    }
+    return res.status(201).json(populatedTasks);
+
+  } catch (err) {
+    console.error('Error creating tasks:', err.message); 
+    return res.status(500).json({
+      error: 'Error while inserting new tasks',
+      details: err.message,
+    });
+  }
+}));
 
 
 // POST method to add a new task
@@ -363,6 +409,10 @@ taskRouter.post(
     }
   })
 );
+
+
+
+
 
 //get the taskstatus
 taskRouter.get("/taskstatus", async(req,res)=>{

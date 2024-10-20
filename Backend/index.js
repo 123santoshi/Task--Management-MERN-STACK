@@ -32,6 +32,8 @@ app.get("/",async(req,res)=> res.json("get method calling "))
 
 app.use("/users",userRouter)
 app.get("/users", userRouter)
+app.get("/users/activeusers", userRouter)
+app.get("/users/inactiveusers", userRouter)
 app.get("/users/:id",userRouter)
 app.delete("/users/:id",userRouter)
 app.get("/users/invite/:id",userRouter)
@@ -43,6 +45,7 @@ app.get("/tasks",taskmodel)
 app.get("/tasks/:id",taskmodel)
 app.post("/tasks/logtime/:id",taskmodel);
 app.post("/tasks", taskmodel)
+app.post("/tasks/bulttasks-upload",taskmodel);
 app.delete("/tasks/:id",taskmodel)
 app.put("/tasks/:id",taskmodel)
 

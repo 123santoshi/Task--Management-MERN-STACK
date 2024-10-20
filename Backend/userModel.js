@@ -31,6 +31,10 @@ const userSchema = new mongoose.Schema({
   otpExpires: {
     type: Date,
   },
+  active:{
+    type:Boolean,
+    default:true
+  }
 });
 
 // Create UserModel
@@ -232,6 +236,29 @@ userRouter.get("/invite/:id", async (req, res) => {
 });
 
 
+//fecth to get active users 
+/*userRouter.get('/activeusers', async (req, res) => {
+  try {
+    const users = await UserModel.find({active:true});
+    console.log("active users==",users);
+    return res.status(200).json(users);
+  } catch (err) {
+    return res.status(500).json({ message: 'Error in backend while fetching active users data', error: err });
+  }
+});
+
+//fetch to get the inactive users 
+userRouter.get('/inactiveusers', async (req, res) => {
+  try {
+    const users = await UserModel.find({active:false});
+    console.log("inactive users==",users);
+    return res.status(200).json(users);
+  } catch (err) {
+    return res.status(500).json({ message: 'Error in backend while fetching inactive users data', error: err });
+  }
+});
+*/
+
 // GET route to fetch all users
 userRouter.get('/', async (req, res) => {
   try {
@@ -262,6 +289,27 @@ userRouter.post('/signup', async (req, res) => {
     return res.status(500).json({ message: 'Error while inserting the new user record', error: err });
   }
 });
+
+userRouter.post('/bulk-upload', async (req, res) => {
+  const users = req.body;
+  try {
+    const existingEmails = await UserModel.find({ email: { $in: users.map(user => user.email) } }); 
+    if (existingEmails.length > 0) {
+      return res.status(409).json({ 
+        message: 'Some emails already exist in the database', 
+        existingEmails: existingEmails.map(user => user.email) 
+      });
+    }
+    const newUsers = await UserModel.insertMany(users); 
+    for (const user of newUsers) {
+      await sendUserAddedMail(user.username, user.email);
+    }
+    return res.status(201).json(newUsers);
+  } catch (err) {
+    return res.status(500).json({ message: 'Error while inserting new user records', error: err });
+  }
+});
+
 
 
 

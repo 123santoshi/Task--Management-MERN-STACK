@@ -4,10 +4,12 @@ import "./tailwind.css";
 import { Link } from 'react-router-dom';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import * as XLSX from 'xlsx';
 
 const Users = () => {
   const [users, setUsers] = useState([]);
   const [searchUser, setSearchUser] = useState("");
+  const [showimportexportoption,setImportExportOption]=useState(false);
 
   const getUsers = async () => {
     try {
@@ -19,43 +21,40 @@ const Users = () => {
     }
   };
 
-
-
-const deleteUser = async (id) => {
+  const deleteUser = async (id) => {
     if (window.confirm("Do you want to delete the user?")) {
-        try {
-            const res = await axios.delete(`http://localhost:8000/users/${id}`);
-            toast.success(res.data.message);
-            getUsers();
-        } catch (error) {
-            console.error("Error deleting user:", error);
-            toast.error("An error occurred while deleting the user.");
-        }
-    }
-};
-
-const sendInvite = async (id) => {
-    try {
-        const res = await axios.get(`http://localhost:8000/users/invite/${id}`);
+      try {
+        const res = await axios.delete(`http://localhost:8000/users/${id}`);
         toast.success(res.data.message);
-    } catch (err) {
-        console.error("Error sending invite:", err);
-        toast.error("An error occurred while sending the invite.");
+        getUsers();
+      } catch (error) {
+        console.error("Error deleting user:", error);
+        toast.error("An error occurred while deleting the user.");
+      }
     }
-};
+  };
 
+  const sendInvite = async (id) => {
+    try {
+      const res = await axios.get(`http://localhost:8000/users/invite/${id}`);
+      toast.success(res.data.message);
+    } catch (err) {
+      console.error("Error sending invite:", err);
+      toast.error("An error occurred while sending the invite.");
+    }
+  };
 
   const searchHandler = (e) => {
     setSearchUser(e.target.value);
   };
 
-
+  // Download full user list as CSV
   const downloadCSV = () => {
-    const headers = ["Username" ,"Email", "Role"];
+    const headers = ["Username", "Email", "Role"];
     const rows = filteredUsers.map(user => [
-        user.username,
-        user.email,
-        user.role
+      user.username,
+      user.email,
+      user.role
     ]);
     let csvContent = "data:text/csv;charset=utf-8,"
       + headers.join(",") + "\n"
@@ -66,11 +65,54 @@ const sendInvite = async (id) => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
 
-};
-  
-  
+  // Download sample CSV template
+  const downloadSampleCSV = () => {
+    const headers = ["username", "email", "role"];
+    const rows = [
+      ["exampleUser", "example@mail.com", "Admin"],
+      ["sampleUser", "sample@mail.com", "User"],
+    ];
+    let csvContent = "data:text/csv;charset=utf-8,"
+      + headers.join(",") + "\n"
+      + rows.map(e => e.join(",")).join("\n");
+    const link = document.createElement("a");
+    link.setAttribute("href", encodeURI(csvContent));
+    link.setAttribute("download", "Sample_Users_Report.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
+  // Upload Excel file and extract user data
+  const uploadExcel = (file) => {
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, { type: 'array' });
+      const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+      const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+      console.log("jsonata==", jsonData);
+      try {
+        const res = await axios.post('http://localhost:8000/users/bulk-upload', jsonData);
+        console.log("res form jsondata==", res);
+        toast.success(res.data.message);
+        getUsers(); // Refresh user list
+      } catch (error) {
+        console.error('Error uploading users:', error);
+        toast.error("An error occurred while uploading users.");
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  };
+
+  const handleFileChange = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      uploadExcel(file);
+    }
+  };
 
   useEffect(() => {
     getUsers();
@@ -83,23 +125,49 @@ const sendInvite = async (id) => {
       (user.role && user.role.toLowerCase().includes(searchUser.toLowerCase()))
     );
   });
-  
-
 
   return (
     <div className='w-full bg-gray-100 p-4'>
-      <ToastContainer position="top-center" autoClose={2000}/>
+      <ToastContainer position="top-center" autoClose={2000} />
       <div className='w-full flex flex-col sm:flex-row justify-between items-center p-5 rounded-md shadow-md'>
         <div className='mb-4 sm:mb-0'>
           <Link to="/adduser">
-            <button className="border text-lg font-bold border-black text-black px-10 py-3 rounded-md hover:bg-green-600 transition">
+            <button className="border text-lg font-bold border-black text-black px-10 py-3 rounded-md hover:bg-green-400 transition">
               Add User
             </button>
           </Link>
+          
+          <div className="relative inline-block text-left mx-5">
+            <button className="border text-lg font-bold border-black text-black px-10 py-3 rounded-md  focus:outline-none" onClick={()=>setImportExportOption(!showimportexportoption)}>
+              Add Multiple Users
+            </button>
+             { showimportexportoption &&
+                <div className="absolute right-0 mt-2 w-full bg-white border rounded-md shadow-lg ">
+                <button
+                  className="block w-full px-4 py-2 text-left text-sm hover:bg-gray-200 text-lg"
+                  onClick={downloadSampleCSV}
+                >
+                  Export Sample Data
+                </button>
+                <label className="block w-full px-4 py-2 text-left text-sm hover:bg-gray-200 cursor-pointer text-lg">
+                  Import Data
+                  <input
+                    type="file"
+                    accept=".xlsx, .xls"
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+            }
+          </div>
+
         </div>
+
         <div className='mb-4 sm:mb-0'>
-          <h3 className='text-red-600 font-bold text-lg'>Total No Of Users : {users.length}</h3>
+          <h3 className='text-red-600 font-bold text-lg'>Total No Of Users: {users.length}</h3>
         </div>
+
         <div>
           <input
             type="search"
@@ -108,9 +176,9 @@ const sendInvite = async (id) => {
             className='border border-gray-500 px-10 py-3 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-300 w-full sm:w-auto'
           />
 
-         <button className= "mx-5 text-2xl" onClick={downloadCSV}>
-              <i className="fas fa-download"></i>
-          </button>   
+          <button className="border border-gray-500 px-10 py-3 mx-3 rounded-md focus:outline-none" onClick={downloadCSV}>
+            <h1>Download Users <i className="fas fa-download"></i></h1>
+          </button>
         </div>
       </div>
 
@@ -118,7 +186,7 @@ const sendInvite = async (id) => {
         <table className='min-w-full bg-white shadow-md rounded'>
           <thead className='bg-pink-500'>
             <tr className="text-center text-white">
-            <th className="p-4">UserId</th>
+              <th className="p-4">UserId</th>
               <th className="p-4">User Name</th>
               <th className="p-4">Email</th>
               <th className="p-4">Role</th>
@@ -142,8 +210,8 @@ const sendInvite = async (id) => {
                     <button className="bg-red-500 text-white w-[50px] px-4 py-2 rounded-md hover:bg-red-600 transition" onClick={() => deleteUser(item._id)}>
                       <i className="fas fa-trash"></i>
                     </button>
-                    <button className=" text-white mx-2  px-4 py-2 rounded-md hover: bg-green-500 transition" onClick={()=>sendInvite(item._id)}>
-                    <i className="fas fa-paper-plane"></i>
+                    <button className="text-white bg-green-500 w-[50px] px-4 py-2  mx-2 rounded-md hover:bg-green-600 transition" onClick={() => sendInvite(item._id)}>
+                      <i className="fas fa-paper-plane"></i>
                     </button>
                   </td>
                 </tr>

@@ -45,11 +45,13 @@ const History = () => {
 
   return (
     <div className="p-4">
-      <table className="min-w-full bg-white border border-gray-100 ">
+      <table className="min-w-full m-auto bg-white border border-black-300 ">
         <thead>
-          <tr className="bg-gray-100 p-5">
-            <th className="p-4 border-b text-left text-black-600 font-bold text-xl">Task Name</th>
-            <th className="p-4px-4 border-b text-left text-black-600 font-bold text-xl ">Change Details</th>
+          <tr className="bg-blue-100 p-5 border">
+            <th className="p-4 border-b text-center text-black-600 font-bold text-xl border border-black">Modified Date</th>
+            <th className="p-4 border-b text-center text-black-600 font-bold text-xl border border-black">Modified Time</th>
+            <th className="p-4 border-b text-center text-black-600 font-bold text-xl border border-black">Task Name</th>
+            <th className="p-4px-4 border-b text-center text-black-600 font-bold text-xl border border-black">Modified Fields Historyb</th>
           </tr>
         </thead>
         <tbody>
@@ -66,8 +68,10 @@ const History = () => {
 
             return (
               <tr key={index} className="hover:bg-gray-100 m-2">
-                <td className="p-4 border-b text-xl m-2">{change.taskname}  </td>
-                <td className="p-4 border-b text-xl m-2">
+                <td className="p-4 border border-black text-xl m-2">{new Date(change.changedAt || change.changedat).toLocaleString().split(",")[0]}</td>
+                <td className="p-4 border border-black text-xl m-2">{new Date(change.changedAt || change.changedat).toLocaleString().split(",")[1]}</td>
+                <td className="p-4 border border-black text-xl m-2">{change.taskname}  </td>
+                <td className="p-4 border border-black text-xl m-2">
                   <strong>{change.changedby}</strong>&nbsp;
                   changed the field <strong>{change.oldstatus.field}</strong>&nbsp; 
                   from "<strong className="text-red-600">{isOwnerChange ? users.find(user => user._id === oldStatusValue)?.username : oldStatusValue}</strong>" 

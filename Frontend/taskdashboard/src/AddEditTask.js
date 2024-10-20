@@ -230,7 +230,7 @@ const AddEditTask = () => {
 
           <button
             type="submit"
-            className="w-full mt-4 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700"
+            className="w-full mt-4 bg-blue-600 text-white p-4 rounded-md hover:bg-blue-700"
           >
             {id ? 'Update Task' : 'Add Task'}
           </button>

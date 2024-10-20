@@ -5,12 +5,15 @@ import { Link, useNavigate } from 'react-router-dom';
 import { FaPlay, FaStop } from 'react-icons/fa'; 
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import * as XLSX from 'xlsx';
+
 
 const Tasks = () => {
     const [tasks, setTasks] = useState([]);
     const [searchTerm, setSearchTerm] = useState("");
     const [taskstatus, setTaskStatus] = useState([]);
     const [priorities, setPriorities] = useState([]);
+    const [showimportexportoption,setImportExportOption]=useState(false);
     const [time, setTime] = useState(0);
     const [activeTaskId, setActiveTaskId] = useState(null);
     const [intervalId, setIntervalId] = useState(null);
@@ -183,11 +186,74 @@ const Tasks = () => {
         document.body.removeChild(link);
     };
 
+
+
+
+// Function to download a sample CSV file
+    const downloadTaskSampleCSV = () => {
+        const headers = ["taskname", "owner", "startdate", "enddate", "isrecurring", 'taskstatus', 'taskpriority'];
+        const rows = [
+            ["Example Task", "santoshi", "2024-10-01", "2024-10-10", "false", "New", "High"],
+            ["Sample Task", "chinni", "2024-10-11", "2024-10-20", "true", "InProgress", "Medium"],
+        ];
+        
+        const csvContent = "data:text/csv;charset=utf-8,"
+            + headers.join(",") + "\n"
+            + rows.map(e => e.join(",")).join("\n");
+        
+        const link = document.createElement("a");
+        link.setAttribute("href", encodeURI(csvContent));
+        link.setAttribute("download", "Sample_Tasks_Report.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+// Function to upload an Excel file
+        const uploadExcel = (file) => {
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+
+                console.log("Parsed JSON Data:", jsonData);
+                try {
+                    const res = await axios.post('http://localhost:8000/tasks/bulktasks-upload', jsonData);
+                    console.log("Response from server:", res);
+                    toast.success(res.data.message);
+                    getTasks(); // Refresh user list
+                } catch (error) {
+                    console.error('Error uploading tasks:', error);
+                    toast.error("An error occurred while uploading users.");
+                }
+            };
+
+            reader.onerror = (error) => {
+                console.error("File reading error:", error);
+                toast.error("An error occurred while reading the file.");
+            };
+
+            reader.readAsArrayBuffer(file);
+        };
+
+        // Handler for file input change
+        const handleFileChange = (event) => {
+            console.log("ee==",event);
+            const file = event.target.files[0];
+            if (file) {
+                
+                uploadExcel(file);
+            }
+        };
+
+
     useEffect(() => {
         getTasks();
         getTaskStatus();
         getPriorities()
-;    }, []);
+;    }, [showimportexportoption]);
 
     return (
         <div className='w-full bg-gray-100 p-4'>
@@ -204,11 +270,41 @@ const Tasks = () => {
                             <option value="all" className='text-blue-500'>All Tasks</option>
                             <option value="active" className='text-blue-500'>Active Tasks</option>
                     </select>
+                    
+
+                    <div className="relative inline-block text-left ">
+                        <button className="border text-lg font-bold border-black text-black px-10 py-3 rounded-md  focus:outline-none" onClick={()=>setImportExportOption(!showimportexportoption)}>
+                        Add Multiple Tasks
+                        </button>
+                        { showimportexportoption &&
+                            <div className="absolute right-0 mt-2 w-full bg-white border rounded-md shadow-lg ">
+                            <button
+                            className="block w-full px-4 py-2 text-left text-sm hover:bg-gray-200 text-lg"
+                            onClick={downloadTaskSampleCSV}
+                            >
+                            Export Sample Data
+                            </button>
+                            <label className="block w-full px-4 py-2 text-left text-sm hover:bg-gray-200 cursor-pointer text-lg">
+                            Import Data
+                            <input
+                                type="file"
+                                accept=".xlsx, .xls"
+                                onChange={handleFileChange}
+                                className="hidden"
+                            />
+                            </label>
+                        </div>
+                        }
+                    </div>
+                                
                 </div>
                 
                 <div className='mb-4 sm:mb-0'>
                     <h3 className='text-red-600 font-bold text-lg'>Total No Of Tasks : {tasks.length}</h3>
                 </div>
+
+               
+
                 <div>
                     <input
                         type="search"
@@ -218,9 +314,9 @@ const Tasks = () => {
                         className='border border-gray-500 px-10 py-3 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-300 w-full sm:w-auto'
                     />
 
-                    <button className="mx-5 text-2xl" onClick={downloadCSV}>
-                        <i className="fas fa-download"></i>
-                    </button>   
+                    <button className= "border border-gray-500 px-10 py-3 mx-3 rounded-md focus:outline-none"onClick={downloadCSV}>
+                        <h1>Download Tasks <i className="fas fa-download"></i></h1>
+                    </button>  
                 </div>
             </div>
 
@@ -267,7 +363,7 @@ const Tasks = () => {
                                         item.taskpriority === "Critical" ? "bg-red-600 text-white" :
                                         item.taskpriority === "High" ? "bg-orange-500 text-white" :
                                         item.taskpriority === "Medium" ? "bg-yellow-300 text-black" :
-                                        item.taskpriority === "Low" ? "bg-green-500 text-black" : "bg-white"
+                                        item.taskpriority === "Low" ? "bg-green-500 text-black" : "bg-red-600"
                                         }`}
                                     >
                                         {priorities.map((p, index) => (
