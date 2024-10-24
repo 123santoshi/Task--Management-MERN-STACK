@@ -27,6 +27,7 @@ const UserDashboard = () => {
         try {
             const response = await axios.get("http://localhost:8000/tasks");
             setTasks(response.data);
+            console.log("tasks=",response.data);
         } catch (error) {
             setError('Failed to fetch tasks');
             console.error('Error fetching tasks:', error);
@@ -38,7 +39,7 @@ const UserDashboard = () => {
     const getTaskStatus = async () => {
         try {
             const response = await axios.get("http://localhost:8000/tasks/taskstatus");
-            setTaskStatus(response.data.taskstatus);
+            setTaskStatus(response.data.TaskStatus);
         } catch (error) {
             setError('Failed to fetch task statuses');
             console.error('Error fetching task statuses:', error);
@@ -126,11 +127,23 @@ const UserDashboard = () => {
 
     return (
         <div className='w-full bg-gray-100 p-4'>
-           <div className="text-center bg-blue-200 p-10 ">
-                <h1 className="text-3xl font-bold text-gray-800">
-                    Task Management
-                </h1>
+            <div className="bg-blue-200 p-10">
+                <div className="flex justify-between items-center">
+                    <h1 className="text-3xl font-bold text-gray-800">
+                        Task Management
+                    </h1>
+                    <div className='flex flex-row  items-center mx-10 '>
+                        <ul className="list-none">
+                            <Link to="/userdashboard"><li className="text-2xl mx-10 font-bold text-gray-800">Tasks</li></Link>
+                        </ul>
+                        <ul className="list-none">
+                            <Link to="/userreport"><li className="text-2xl mx-10 font-bold text-gray-800">LogTime</li></Link>
+                        </ul>
+                    </div>
+
+                </div>
             </div>
+
             <div className='w-full flex flex-col sm:flex-row py-5 justify-end items-center  rounded-md shadow-md'>
                 <div>
                     <input
@@ -151,6 +164,7 @@ const UserDashboard = () => {
                             <th className="p-4" scope="col">Owner</th>
                             <th className="p-4" scope="col">Start Date</th>
                             <th className="p-4" scope="col">End Date</th>
+                            <th className="p-4" scope="col">Task Priority</th>
                             <th className="p-4" scope="col">Task Status</th>
                             <th className="p-4" scope="col">Actions</th>
                         </tr>
@@ -162,6 +176,7 @@ const UserDashboard = () => {
                                 <td className="p-4 text-center">{item.owner ? (typeof item.owner === 'object' ? item.owner.username : item.owner) : 'No Owner'}</td>
                                 <td className="p-4 text-center">{new Date(item.startdate).toLocaleDateString()}</td>
                                 <td className="p-4 text-center">{new Date(item.enddate).toLocaleDateString()}</td>
+                                <td className="p-4 text-center">{item.taskpriority}</td>
                                 <td className="p-4 text-center">
                                     <select
                                         value={item.taskstatus}
