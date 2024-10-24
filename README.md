@@ -1,6 +1,27 @@
 Task Management Dashboard Features (MERN Stack): 
 
-This project is designed with two key dashboards—Admin Dashboard and User Dashboard—providing distinct functionalities to manage tasks efficiently and track performance.
+This project is designed with two key dashboards **Admin Dashboard and User Dashboard** providing distinct functionalities to manage tasks efficiently and track performance.
+
+### Used Languages:
+- **HTML**: Used for structuring the content of web pages.
+- **CSS**: Provides the style and layout for web pages, making them visually appealing.
+- **Tailwind CSS**: Utility-first CSS framework for rapidly building custom designs without leaving HTML.
+- **React JS**: Frontend library for building user interfaces with reusable components and state management.
+- **Node JS**: JavaScript runtime for building scalable server-side applications.
+- **Express JS**: Web framework for Node.js to handle HTTP requests and routing easily.
+- **MongoDB**: NoSQL database to store and retrieve data in a flexible, JSON-like format.
+
+### Libraries:
+- **React Toastify**: Provides elegant, customizable notifications in the UI.
+- **Recharts**: Used for creating interactive and responsive bar charts and visual data representation.
+- **React-datepicker**: Allows users to easily select dates from a visual calendar in forms.
+  
+### Backend Libraries:
+- **Nodemailer**: Enables sending emails directly from the server.
+- **Cron**: Schedules tasks to run automatically at specified intervals.
+
+
+Implemented Features in this project :
 
 1. Signup & OTP-Based Login :
    -> Signup : Users can register by entering their username and email id  on the signup page.
