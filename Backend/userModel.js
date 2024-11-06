@@ -129,7 +129,7 @@ const sendUserAddedMail = async (username , email) => {
             We’ve successfully onboarded you, and you are now set up to begin your tasks. We look forward to working together and are excited for the contributions you’ll bring to the team.
         </p>  
     <div style="width: 50%; padding: 10px; margin: 20px auto; background-color: lightblue; color: black; border-radius: 5px; font-weight: bold;">
-            <a  href="http://localhost:3000/login" style="display: block;  font-size: 16px;  border-radius: 5px; font-weight: bold; text-align: center; text-decoration: none; transition: background-color 0.3s ease, color 0.3s ease;">Click here to join us </a>
+            <a  href="${process.env.BASE_URL}/login" style="display: block;  font-size: 16px;  border-radius: 5px; font-weight: bold; text-align: center; text-decoration: none; transition: background-color 0.3s ease, color 0.3s ease;">Click here to join us </a>
         </div>
 
      <div style="width: 50%; padding: 10px; margin: 20px auto; background-color: lightgray; color: black; border-radius: 5px; font-weight: bold;">

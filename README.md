@@ -108,3 +108,4 @@ The User Dashboard is designed for individual users to track their assigned task
 This task management dashboard provides comprehensive tools for both admins and users to manage tasks effectively. It automates time logging, simplifies task creation and monitoring, and generates detailed reports for performance tracking. Features like recurring tasks, email notifications, and graphical dashboards ensure that tasks are completed on time and users stay informed. The use of OTP-based login enhances security, while scheduled jobs for recurring tasks streamline workflows.
 
 This project is ideal for teams looking for a scalable and efficient way to manage tasks across different users and projects.
+s
