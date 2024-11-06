@@ -12,6 +12,6 @@
         "dest": "/src/index.js"
       }
     ],
-    "buildCommand": "npm run build"
+    "buildCommand": "npm install react-scripts && npm run build"
   }
   
